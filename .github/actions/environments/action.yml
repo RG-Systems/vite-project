@@ -1,0 +1,23 @@
+# Get list of github environments
+
+name: 'Environments'
+description: 'Get list of github environments'
+inputs:
+  token:
+    description: 'Github token'
+    required: true
+    default: ${{ github.token }}
+outputs:
+  environments:
+    description: 'List of environments'
+    value: ${{ steps.result.outputs.environments }}
+runs:
+  using: 'composite'
+  steps:
+    - id: result
+      shell: bash
+      run: |
+        curl \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ github.token }}" \
+          https://api.github.com/repos/${{ github.repository }}/environments

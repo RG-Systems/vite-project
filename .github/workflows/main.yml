@@ -1,0 +1,15 @@
+name: Main branch changes workflow
+
+concurrency: main
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./.github/actions/environments
