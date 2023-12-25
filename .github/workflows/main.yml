@@ -27,20 +27,20 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           yarn build
-      - name: Generate env variables
+      - id: deploy
+        name: Deploy infrastructure
         working-directory: ./cdk
         run: |
-          echo "ENV=qa" >> $GITHUB_ENV
-          echo "ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)" >> $GITHUB_ENV
-          echo "PROJECT_NAME=$(cat ../package.json | jq -r '.name')" >> $GITHUB_ENV
-          echo "STACK=$(echo $PROJECT_NAME-$ENV)" >> $GITHUB_ENV
-      - name: Deploy infrastructure
-        working-directory: ./cdk
-        run: |
+          ENV=qa
+          ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
+          PROJECT_NAME=$(cat ../package.json | jq -r '.name')
+          STACK=$PROJECT_NAME-$ENV
           yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
+          echo "stack=$STACK" >> $GITHUB_OUTPUT
       - id: result
         name: Generate outputs
         run: |
+          STACK=${{ steps.deploy.outputs.stack }}}
           echo "bucket=$(jq -r '."$STACK".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq -r '."$STACK".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "url=$(jq -r '."$STACK".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
