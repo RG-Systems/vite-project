@@ -1,0 +1,12 @@
+{
+  "vite-project-storage": {
+    "ExportsOutputRefviteprojectdistributionqaOrigin144451C6BS3OriginFB887B0C8FDBE86A": "E3QL54ENDJB5JV",
+    "ExportsOutputFnGetAttviteprojectstorage16B19A5DRegionalDomainName303366C5": "vite-project-storage.s3.us-east-1.amazonaws.com",
+    "ExportsOutputRefviteprojectstorage16B19A5D6D5D7D5A": "vite-project-storage"
+  },
+  "vite-project-distribution-qa": {
+    "BucketName": "vite-project-storage",
+    "DeploymentUrl": "https://d2jsvhagzta0mg.cloudfront.net",
+    "DistributionId": "EL5O8UW5LORB8"
+  }
+}

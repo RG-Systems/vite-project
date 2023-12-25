@@ -58,7 +58,7 @@ export class DistributionStack extends cdk.Stack {
         });
 
         new cdk.CfnOutput(this, "DeploymentUrl", {
-          value: "https://" + distribution.distributionDomainName
+          value: "https://" + distribution.domainName
         });
 
         new cdk.CfnOutput(this, "DistributionId", {
