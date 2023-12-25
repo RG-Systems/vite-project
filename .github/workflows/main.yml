@@ -36,15 +36,15 @@ jobs:
       - name: Deploy infrastructure
         working-directory: ./cdk
         run: |
-          STACK_NAME=$PROJECT_NAME-$ENV
+          STACK_NAME=${{ github.env.PROJECT_NAME }}-${{ github.env.ENV }}
           echo "export STACK=$STACK_NAME >> $GITHUB_ENV"
           yarn cdk deploy $STACK_NAME --require-approval never --outputs-file cdk-outputs.json
       - id: result
         name: Generate outputs
         run: |
-          echo "bucket=$(jq -r '."$STACK".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "id=$(jq -r '."$STACK".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "url=$(jq -r '."$STACK".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "bucket=$(jq -r '."${{ github.env.STACK }}".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "id=$(jq -r '."${{ github.env.STACK }}".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "url=$(jq -r '."${{ github.env.STACK }}".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
 
   build:
     environment: qa
