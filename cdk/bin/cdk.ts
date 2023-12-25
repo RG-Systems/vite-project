@@ -42,4 +42,4 @@ new DistributionStack(app, distribution, {
   priceClass,
   variables,
   domains,
-});
+}).addDependency(storageStack);
