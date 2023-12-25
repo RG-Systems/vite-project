@@ -32,6 +32,25 @@ export class DistributionStack extends cdk.Stack {
           });
         }
 
+        const envsHandler = new cloudfront.Function(this, 'Function', {
+          code: cloudfront.FunctionCode.fromInline(`
+            function handler(event) {
+              if (!event.request.uri.endsWith('/env.json')) return event.request;
+
+                return {
+                  statusCode: 200,
+                  statusDescription: 'OK',
+                  headers: {
+                  'content-type': {
+                    value: 'application/json;charset=UTF-8',
+                  },
+                },
+                body: JSON.stringify(${JSON.stringify(variables)}),
+              };
+            }
+          `),
+        });
+
         const distribution = new cloudfront.Distribution(this, 'Distribution', {
             priceClass: priceClass ?? cloudfront.PriceClass.PRICE_CLASS_100,
             certificate: this.certificate,
@@ -50,24 +69,7 @@ export class DistributionStack extends cdk.Stack {
                 functionAssociations: [
                     {
                         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-                        function: new cloudfront.Function(this, 'Function', {
-                            code: cloudfront.FunctionCode.fromInline(`
-                                function handler(event) {
-                                    if (!event.request.uri.endsWith('/env.json')) return event.request;
-
-                                    return {
-                                        statusCode: 200,
-                                        statusDescription: 'OK',
-                                        headers: {
-                                            'content-type': {
-                                                value: 'application/json;charset=UTF-8',
-                                            },
-                                        },
-                                        body: JSON.stringify(${JSON.stringify(variables)}),
-                                    };
-                                }
-                            `),
-                        }),
+                        function: envsHandler,
                     }
                 ],
             },
