@@ -1,15 +1,83 @@
-name: Main branch changes workflow
+name: Main
 
 concurrency: main
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  main:
+  infra:
+    environment: qa
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/environments
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+      - working-directory: ./cdk
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+          echo "export ENV=qa >> $GITHUB_ENV"
+          echo "export ORIGIN_PATH=${{ github.sha }} >> $GITHUB_ENV"
+          echo "export PROJECT_NAME=$(cat ../package.json | jq -r '.name') >> $GITHUB_ENV"
+          echo "export STACK="$PROJECT_NAME-$ENV" >> $GITHUB_ENV"
+          yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
+      - id: result
+        run: |
+          echo "bucket=$(jq -r '."$STACK".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "id=$(jq -r '."$STACK".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "url=$(jq -r '."$STACK".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
+
+
+  build:
+    environment: qa
+    runs-on: ubuntu-latest
+    needs: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+      - run: |
+          yarn install --frozen-lockfile
+          yarn build
+          yarn test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: artifact
+          path: ./dist
+
+  deploy:
+    environment: qa
+    runs-on: ubuntu-latest
+    needs:
+      - infra
+      - build
+
+    permissions:
+      deployments: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: artifact
+          path: ./dist
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::503479554940:role/RG-Systems-GH-Actions
+          role-session-name: vp-cdk-deploy
+          aws-region: us-east-1
+      - run: |
+          aws s3 sync ./dist s3://${{ needs.infra.result.bucket }}/${{ github.sha }}
+          aws cloudfront create-invalidation --distribution-id ${{ needs.infra.result.id }} --paths "/*"

@@ -1,39 +1,45 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
+
+
+import * as fs from 'fs';
+import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
+import { PriceClass } from 'aws-cdk-lib/aws-cloudfront';
+
 import { DistributionStack } from '../lib/distribution-stack';
 import { StorageStack } from '../lib/storage-stack';
-import { PriceClass } from 'aws-cdk-lib/aws-cloudfront';
+
+const manifest = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, '../../package.json'), 'utf8')
+);
+
+const name = manifest.name;
 
 const app = new cdk.App();
 
-const {
-  ORIGIN_PATH,
-  ENV,
-  PROJECT_NAME,
-  VARIABLES,
-} = process.env || {};
+const { ORIGIN_PATH, ENV, DOMAIN, VARIABLES } = process.env || {};
 
+const storageStack = new StorageStack(app, `${name}-storage`);
 
-const storageStack = new StorageStack(app, `${PROJECT_NAME}-storage`);
+const env = (ENV || 'qa').toLowerCase().trim();
+const priceClass = env === 'prod' ? PriceClass.PRICE_CLASS_ALL : PriceClass.PRICE_CLASS_100;
+const variables = JSON.parse(VARIABLES || '{}');
+const originPath = ORIGIN_PATH || '';
+const distribution = env === 'tmp' ? `${originPath}-${name}-distribution-${env}` : `${name}-distribution-${env}`;
+const domains = [];
+if (DOMAIN) {
+  if (env === 'tmp') {
+    domains.push(`${originPath}-${DOMAIN}`);
+  } else {
+    domains.push(DOMAIN);
+  }
+}
 
-new DistributionStack(app, `${PROJECT_NAME}-env-qa`, {
-  path: ORIGIN_PATH,
+new DistributionStack(app, distribution, {
   bucket: storageStack.bucket,
-  priceClass: PriceClass.PRICE_CLASS_100,
-  variables: JSON.parse(VARIABLES),
-});
-
-new DistributionStack(app, `${NAME}-env-prod`, {
-  path: ORIGIN_PATH,
-  bucket: storageStack.bucket,
-  priceClass: PriceClass.PRICE_CLASS_ALL,
-  variables: VARIABLES.prod,
-});
-
-new DistributionStack(app, `${NAME}-env-tmp-${path}`, {
-  path,
-  bucket: storageStack.bucket,
-  priceClass: PriceClass.PRICE_CLASS_100,
-  variables: VARIABLES[tmp] || VARIABLES.qa,
+  path: originPath,
+  priceClass,
+  variables,
+  domains,
 });

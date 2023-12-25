@@ -8,16 +8,18 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 type Props = cdk.StackProps & {
     path?: string;
     bucket: Bucket;
+    domains?: string[];
     priceClass?: cloudfront.PriceClass;
     variables?: Record<string, string>;
 };
 
 export class DistributionStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, { bucket, path, variables, priceClass, ...props }: Props) {
+    constructor(scope: Construct, id: string, { bucket, path, variables, domains, priceClass, ...props }: Props) {
         super(scope, id, props);
 
         const distribution = new cloudfront.Distribution(this, id, {
             priceClass: priceClass ?? cloudfront.PriceClass.PRICE_CLASS_100,
+            domainNames: domains,
             defaultRootObject: 'index.html',
             errorResponses: [
                 {
