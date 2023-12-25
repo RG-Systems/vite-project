@@ -30,10 +30,10 @@ jobs:
       - name: Generate env variables
         working-directory: ./cdk
         run: |
-          echo "export ENV=qa >> $GITHUB_ENV"
+          echo "ENV=qa >> $GITHUB_ENV"
           echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | cut -c 1-6)" >> $GITHUB_ENV
-          echo "export ORIGIN_PATH=$GITHUB_SHA_SHORT >> $GITHUB_ENV"
-          echo "export PROJECT_NAME=$(cat ../package.json | jq -r '.name') >> $GITHUB_ENV"
+          echo "ORIGIN_PATH=$GITHUB_SHA_SHORT >> $GITHUB_ENV"
+          echo "PROJECT_NAME=$(cat ../package.json | jq -r '.name') >> $GITHUB_ENV"
           echo "DEBUG (ENVS) >>>"
           cat $GITHUB_ENV
           echo "DEBUG (ENVS) <<<"
@@ -43,15 +43,14 @@ jobs:
           echo "DEBUG (Deploy) >>>"
           cat $GITHUB_ENV
           echo "DEBUG (Deploy) <<<"
-          STACK_NAME=$PROJECT_NAME-$ENV
-          echo "export STACK=$STACK_NAME >> $GITHUB_ENV"
-          yarn cdk deploy $STACK_NAME --require-approval never --outputs-file cdk-outputs.json
+          echo "STACK=$PROJECT_NAME-$ENV >> $GITHUB_ENV"
+          yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
       - id: result
         name: Generate outputs
         run: |
-          echo "bucket=$(jq -r '."${{ github.env.STACK }}".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "id=$(jq -r '."${{ github.env.STACK }}".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "url=$(jq -r '."${{ github.env.STACK }}".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "bucket=$(jq -r '."$STACK".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "id=$(jq -r '."$STACK".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "url=$(jq -r '."$STACK".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
 
   build:
     environment: qa
