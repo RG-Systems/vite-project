@@ -34,7 +34,7 @@ jobs:
           ENV=qa
           ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
-          STACK=$PROJECT_NAME-$ENV
+          STACK=$PROJECT_NAME-distribution-$ENV
           yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
           echo "stack=$STACK" >> $GITHUB_OUTPUT
       - id: result
