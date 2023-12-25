@@ -27,6 +27,11 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           yarn build
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::503479554940:role/RG-Systems-GH-Actions
+          role-session-name: vp-cdk-deploy
+          aws-region: us-east-1
       - id: deploy
         name: Deploy infrastructure
         working-directory: ./cdk
