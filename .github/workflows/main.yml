@@ -11,6 +11,11 @@ jobs:
   infra:
     environment: qa
     runs-on: ubuntu-latest
+    outputs:
+      folder: ${{ steps.deploy.outputs.folder }}
+      bucket: ${{ steps.deploy.outputs.bucket }}
+      id: ${{ steps.deploy.outputs.id }}
+      url: ${{ steps.deploy.outputs.url }}
 
     permissions:
       id-token: write
@@ -91,5 +96,5 @@ jobs:
           aws-region: us-east-1
       - name: Deploy to S3
         run: |
-          aws s3 sync ./dist s3://${{ needs.infra.result.bucket }}/${{ needs.infra.result.folder }}
+          aws s3 sync ./dist s3://${{ needs.infra.outputs.bucket }}/${{ needs.infra.result.folder }}
           aws cloudfront create-invalidation --distribution-id ${{ needs.infra.result.id }} --paths "/*"
