@@ -4,22 +4,38 @@ import type { Bucket } from 'aws-cdk-lib/aws-s3';
 import * as cdk from 'aws-cdk-lib';
 import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as targets from 'aws-cdk-lib/aws-route53-targets';
 
 type Props = cdk.StackProps & {
     path?: string;
     bucket: Bucket;
-    domains?: string[];
+    domain?: string;
     priceClass?: cloudfront.PriceClass;
     variables?: Record<string, string>;
 };
 
 export class DistributionStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, { bucket, path, variables, domains, priceClass, ...props }: Props) {
+    private zone: route53.IHostedZone;
+    private certificate: acm.ICertificate;
+
+    constructor(scope: Construct, id: string, { bucket, path, variables, domain, priceClass, ...props }: Props) {
         super(scope, id, props);
 
-        const distribution = new cloudfront.Distribution(this, id, {
+        if (domain) {
+          const domainName = domain.split('.').slice(1).join('.');
+          this.zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName });
+          this.certificate = new acm.Certificate(this, 'Certificate', {
+            domainName: domain,
+            validation: acm.CertificateValidation.fromDns(this.zone),
+          });
+        }
+
+        const distribution = new cloudfront.Distribution(this, 'Distribution', {
             priceClass: priceClass ?? cloudfront.PriceClass.PRICE_CLASS_100,
-            domainNames: domains,
+            certificate: this.certificate,
+            domainNames: [domain ?? ''],
             defaultRootObject: 'index.html',
             errorResponses: [
                 {
@@ -34,7 +50,7 @@ export class DistributionStack extends cdk.Stack {
                 functionAssociations: [
                     {
                         eventType: cloudfront.FunctionEventType.VIEWER_REQUEST,
-                        function: new cloudfront.Function(this, `${id}-env`, {
+                        function: new cloudfront.Function(this, 'Function', {
                             code: cloudfront.FunctionCode.fromInline(`
                                 function handler(event) {
                                     if (!event.request.uri.endsWith('/env.json')) return event.request;
@@ -56,6 +72,14 @@ export class DistributionStack extends cdk.Stack {
                 ],
             },
         });
+
+        if (domain) {
+          new route53.ARecord(this, 'ARecord', {
+            recordName: domain,
+            target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+            zone: this.zone,
+          });
+        }
 
         new cdk.CfnOutput(this, "DeploymentUrl", {
           value: "https://" + distribution.domainName

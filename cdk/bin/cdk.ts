@@ -27,19 +27,12 @@ const priceClass = env === 'prod' ? PriceClass.PRICE_CLASS_ALL : PriceClass.PRIC
 const variables = JSON.parse(VARIABLES || '{}');
 const originPath = ORIGIN_PATH || '';
 const distribution = env === 'tmp' ? `${originPath}-${name}-distribution-${env}` : `${name}-distribution-${env}`;
-const domains = [];
-if (DOMAIN) {
-  if (env === 'tmp') {
-    domains.push(`${originPath}-${DOMAIN}`);
-  } else {
-    domains.push(DOMAIN);
-  }
-}
+const domain = env === 'tmp' ? `${originPath}-${DOMAIN}` : DOMAIN;
 
 new DistributionStack(app, distribution, {
   bucket: storageStack.bucket,
   path: originPath,
   priceClass,
   variables,
-  domains,
+  domain,
 }).addDependency(storageStack);
