@@ -51,15 +51,6 @@ jobs:
           echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "url=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          cat cdk-outputs.json
-      - name: Debug
-        run: |
-          echo "Debug GITHUB_OUTPUT >>>"
-          cat $GITHUB_OUTPUT
-          echo "<<< GITHUB_OUTPUT Debug"
-          echo "Debug deploy.outputs >>>"
-          echo "${{ toJSON(steps.deploy.outputs) }}"
-          echo "<<< deploy.outputs Debug"
 
   build:
     environment: qa
@@ -109,5 +100,5 @@ jobs:
           aws-region: us-east-1
       - name: Deploy to S3
         run: |
-          aws s3 sync ./dist s3://${{ needs.infra.outputs.bucket }}/${{ needs.infra.result.folder }}
-          aws cloudfront create-invalidation --distribution-id ${{ needs.infra.result.id }} --paths "/*"
+          aws s3 sync ./dist s3://${{ needs.infra.outputs.bucket }}/${{ needs.infra.outputs.folder }}
+          aws cloudfront create-invalidation --distribution-id ${{ needs.infra.outputs.id }} --paths "/*"
