@@ -34,11 +34,15 @@ jobs:
           echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | cut -c 1-6)" >> $GITHUB_ENV
           echo "export ORIGIN_PATH=$GITHUB_SHA_SHORT >> $GITHUB_ENV"
           echo "export PROJECT_NAME=$(cat ../package.json | jq -r '.name') >> $GITHUB_ENV"
+          echo "DEBUG (ENVS) >>>"
           cat $GITHUB_ENV
+          echo "DEBUG (ENVS) <<<"
       - name: Deploy infrastructure
         working-directory: ./cdk
         run: |
-          printenv
+          echo "DEBUG (Deploy) >>>"
+          cat $GITHUB_ENV
+          echo "DEBUG (Deploy) <<<"
           STACK_NAME=$PROJECT_NAME-$ENV
           echo "export STACK=$STACK_NAME >> $GITHUB_ENV"
           yarn cdk deploy $STACK_NAME --require-approval never --outputs-file cdk-outputs.json
