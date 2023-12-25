@@ -41,10 +41,10 @@ jobs:
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
           yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
-          echo "folder=$ORIGIN_PATH" >> $GITHUB_ENV
-          echo "bucket=$(jq -r '."$STACK".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "id=$(jq -r '."$STACK".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "url=$(jq -r '."$STACK".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
+          echo "bucket=$(jq -r '.$STACK.BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "id=$(jq -r '.$STACK.DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
+          echo "url=$(jq -r '.$STACK.DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
 
   build:
     environment: qa
