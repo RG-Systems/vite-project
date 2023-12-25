@@ -26,17 +26,21 @@ jobs:
         run: |
           yarn install --frozen-lockfile
           yarn build
+      - id: env
+        working-directory: ./cdk
+        run: |
           echo "export ENV=qa >> $GITHUB_ENV"
           echo "export ORIGIN_PATH=${{ github.sha }} >> $GITHUB_ENV"
           echo "export PROJECT_NAME=$(cat ../package.json | jq -r '.name') >> $GITHUB_ENV"
           echo "export STACK="$PROJECT_NAME-$ENV" >> $GITHUB_ENV"
-          yarn cdk deploy "$STACK" --require-approval never --outputs-file cdk-outputs.json
+      - working-directory: ./cdk
+        run: |
+          yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
       - id: result
         run: |
           echo "bucket=$(jq -r '."$STACK".BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq -r '."$STACK".DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "url=$(jq -r '."$STACK".DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
-
 
   build:
     environment: qa
