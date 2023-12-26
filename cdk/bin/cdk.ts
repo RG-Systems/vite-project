@@ -20,7 +20,12 @@ const app = new cdk.App();
 
 const { ORIGIN_PATH, ENV, DOMAIN, VARIABLES } = process.env || {};
 
-const storageStack = new StorageStack(app, `${name}-storage`);
+const storageStack = new StorageStack(app, `${name}-storage`, {
+  env: {
+    account: process.env.AWS_ACCOUNT,
+    region: process.env.AWS_REGION,
+  }
+});
 
 const env = (ENV || 'qa').toLowerCase().trim();
 const priceClass = env === 'prod' ? PriceClass.PRICE_CLASS_ALL : PriceClass.PRICE_CLASS_100;
@@ -35,4 +40,8 @@ new DistributionStack(app, distribution, {
   priceClass,
   variables,
   domain,
+  env: {
+    account: process.env.AWS_ACCOUNT,
+    region: process.env.AWS_REGION,
+  }
 }).addDependency(storageStack);
