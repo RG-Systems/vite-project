@@ -17,7 +17,7 @@ const projectName = JSON.parse(
 
 const app = new cdk.App();
 
-const { ORIGIN_PATH, ENV, DOMAIN, VARIABLES } = process.env || {};
+const { ORIGIN_PATH, ENV, DOMAIN, ...variables } = process.env || {};
 
 console.log('DEBUG CDK >>>');
 
@@ -28,7 +28,7 @@ console.log('=======================================');
 console.log('ORIGIN_PATH', ORIGIN_PATH);
 console.log('ENV', ENV);
 console.log('DOMAIN', DOMAIN);
-console.log('VARIABLES', VARIABLES);
+console.log('VARIABLES', variables);
 
 console.log('DEBUG CDK <<<');
 
@@ -47,9 +47,9 @@ const domain = env === 'tmp' ? `${ORIGIN_PATH}-${DOMAIN}` : DOMAIN;
 
 new DistributionStack(app, distribution, {
   bucket: storageStack.bucket,
-  variables: VARIABLES,
   path: ORIGIN_PATH,
   priceClass,
+  variables,
   domain,
   env: {
     account: process.env.AWS_ACCOUNT,

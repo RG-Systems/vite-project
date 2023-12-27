@@ -13,7 +13,7 @@ type Props = cdk.StackProps & {
     bucket: Bucket;
     domain?: string;
     priceClass?: cloudfront.PriceClass;
-    variables?: string;
+    variables?: Record<string, string | undefined>;
 };
 
 export class DistributionStack extends cdk.Stack {
@@ -32,8 +32,6 @@ export class DistributionStack extends cdk.Stack {
           });
         }
 
-        const body = variables ? this.getVariables(variables) : {};
-
         const envsHandler = new cloudfront.Function(this, 'Function', {
           code: cloudfront.FunctionCode.fromInline(`
           function handler(event) {
@@ -46,7 +44,7 @@ export class DistributionStack extends cdk.Stack {
                     value: 'application/json;charset=UTF-8',
                   },
               },
-              body: ${JSON.stringify(body)},
+              body: ${JSON.stringify(variables)},
             };
           }
           `),
@@ -95,18 +93,5 @@ export class DistributionStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'BucketName', {
           value: bucket.bucketName,
         });
-    }
-
-    /**
-     * Converts a string of variables to a JSON object
-     * @param variables {string}
-     * @example "AWS_ACCOUNT=123456789012 AWS_REGION=us-east-1" -> "{ AWS_ACCOUNT=123456789012, AWS_REGION=us-east-1 }"
-     */
-    private getVariables(variables: string) {
-      return variables.split(' ').reduce((acc: Record<string, string>, curr: string) => {
-        const [key, value] = curr.split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
     }
 }

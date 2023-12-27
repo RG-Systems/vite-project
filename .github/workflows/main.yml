@@ -42,13 +42,11 @@ jobs:
         name: Get variables
         working-directory: ./cdk
         run: |
-          ENV=qa
           ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
           touch .env
           echo ${{ toJson(vars) }} | jq -r 'to_entries | .[] | "\(.key)=\(.value)"' >> .env
-          echo "ENV=$ENV" >> .env
           echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
           echo "PROJECT_NAME=$PROJECT_NAME" >> .env
           echo "stack=$STACK" >> $GITHUB_OUTPUT
