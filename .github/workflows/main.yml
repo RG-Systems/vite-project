@@ -23,6 +23,7 @@ jobs:
       contents: read
 
     steps:
+      - uses: actions/checkout@v4
       - id: infra-deploy
         uses: ./.github/actions/infra-deploy
         with:
@@ -32,6 +33,7 @@ jobs:
     environment: qa
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/build-app
 
   deploy:
@@ -51,6 +53,7 @@ jobs:
       contents: read
 
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/deploy-app
         with:
           folder: ${{ needs.infra.outputs.folder }}
