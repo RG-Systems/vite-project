@@ -95,9 +95,9 @@ runs:
         DOMAIN=$(echo '${{ inputs.vars }}' | jq -r '.DOMAIN')
         if [ $ENV = "tmp" ]; then
           if [ -z "${{ inputs.pr-number }}" ]; then
-            DOMAIN=$DOMAIN-${{ steps.origin-path.outputs.value }}
+            DOMAIN=${{ steps.origin-path.outputs.value }}-$DOMAIN
           else
-            DOMAIN=$DOMAIN-${{ inputs.pr-number }}
+            DOMAIN=${{ inputs.pr-number }}-$DOMAIN
           fi
         fi
         echo "value=$DOMAIN" >> $GITHUB_OUTPUT
