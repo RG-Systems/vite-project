@@ -63,7 +63,7 @@ runs:
     - id: project
       shell: bash
       run: |
-        PROJECT_NAME=$(cat ../package.json | jq -r '.name')
+        PROJECT_NAME=$(cat ./package.json | jq -r '.name')
         echo "value=$PROJECT_NAME" >> $GITHUB_OUTPUT
     - id: stack
       shell: bash
