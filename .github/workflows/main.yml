@@ -9,14 +9,15 @@ on:
 
 jobs:
   infra:
+    name: Deploy the infra
     environment: qa
     runs-on: ubuntu-latest
 
     outputs:
-      folder: ${{ steps.infra-deploy.outputs.folder }}
-      bucket: ${{ steps.infra-deploy.outputs.bucket }}
-      id: ${{ steps.infra-deploy.outputs.id }}
-      url: ${{ steps.infra-deploy.outputs.url }}
+      folder: ${{ steps.deploy-infra.outputs.folder }}
+      bucket: ${{ steps.deploy-infra.outputs.bucket }}
+      id: ${{ steps.deploy-infra.outputs.id }}
+      url: ${{ steps.deploy-infra.outputs.url }}
 
     permissions:
       id-token: write
@@ -24,12 +25,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - id: infra-deploy
+      - id: deploy-infra
         uses: ./.github/actions/infra-deploy
         with:
           environment: qa
+          aws-account: ${{ secrets.AWS_ACCOUNT }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          vars: ${{ toJSON(vars) }}
 
   build:
+    name: Build the app
     environment: qa
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +42,7 @@ jobs:
       - uses: ./.github/actions/build-app
 
   deploy:
+    name: Deploy the app
     environment:
       name: qa
       url: ${{ needs.infra.outputs.url }}

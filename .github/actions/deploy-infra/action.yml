@@ -8,6 +8,15 @@ inputs:
     description: 'The environment to deploy to'
     required: true
     default: 'qa'
+  aws-account:
+    description: 'The AWS account to deploy to'
+    required: true
+  aws-region:
+    description: 'The AWS region to deploy to'
+    required: true
+  vars:
+    description: 'The variables to pass to the CDK'
+    required: true
 
 outputs:
   folder:
@@ -40,7 +49,7 @@ runs:
         yarn build
     - uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
+        role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
         role-session-name: vp-cdk-deploy
         aws-region: us-east-1
     - id: variables
@@ -53,11 +62,11 @@ runs:
         PROJECT_NAME=$(cat ../package.json | jq -r '.name')
         STACK=$PROJECT_NAME-distribution-$ENV
         touch .env
-        echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
+        echo '${{ toJson(inputs.vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
         echo "ENV=$ENV" >> .env
-        echo "DOMAIN=${{ vars.DOMAIN }}" >> .env
-        echo "AWS_ACCOUNT=${{ secrets.AWS_ACCOUNT }}" >> .env
-        echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+        echo "DOMAIN=${{ inputs.vars.DOMAIN }}" >> .env
+        echo "AWS_ACCOUNT=${{ inputs.aws-account }}" >> .env
+        echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
         echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
         echo "PROJECT_NAME=$PROJECT_NAME" >> .env
         echo "stack=$STACK" >> $GITHUB_OUTPUT
