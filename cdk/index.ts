@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+import 'dotenv/config';
 import 'source-map-support/register';
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
+
 import { PriceClass } from 'aws-cdk-lib/aws-cloudfront';
 
 import { DistributionStack } from './distribution-stack';
