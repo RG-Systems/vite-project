@@ -17,11 +17,14 @@ inputs:
   vars:
     description: 'The variables to pass to the CDK'
     required: true
+  pr-number:
+    description: 'The ticket number'
+    required: false
 
 outputs:
   folder:
     description: 'The folder to upload'
-    value: ${{ steps.variables.outputs.folder }}
+    value: ${{ steps.origin-path.outputs.value }}
   bucket:
     description: 'The bucket to upload to'
     value: ${{ steps.deploy.outputs.bucket }}
@@ -52,35 +55,61 @@ runs:
         role-to-assume: arn:aws:iam::${{ inputs.aws-account }}:role/RG-Systems-GH-Actions
         role-session-name: vp-cdk-deploy
         aws-region: ${{ inputs.aws-region }}
-    - id: variables
+    - id: origin-path
       shell: bash
-      name: Get variables
-      working-directory: ./cdk
+      run: |
+        ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
+        echo "value=$ORIGIN_PATH" >> $GITHUB_OUTPUT
+    - id: project
+      shell: bash
+      run: |
+        PROJECT_NAME=$(cat ../package.json | jq -r '.name')
+        echo "value=$PROJECT_NAME" >> $GITHUB_OUTPUT
+    - id: stack
+      shell: bash
       run: |
         ENV=${{ inputs.environment }}
-        ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
-        PROJECT_NAME=$(cat ../package.json | jq -r '.name')
-        STACK=$PROJECT_NAME-$ENV
+        STACK=${{ steps.project.outputs.value }}-$ENV
         if [ $ENV = "tmp" ]; then
-          STACK=$PROJECT_NAME-$ENV-$ORIGIN_PATH
+          if [ -z "${{ inputs.pr-number }}" ]; then
+            STACK=${{ steps.project.outputs.value }}-$ENV-${{ steps.origin-path.outputs.value }}
+          else
+            STACK=${{ steps.project.outputs.value }}-$ENV-${{ inputs.pr-number }}
+          fi
         fi
+        echo "value=$STACK" >> $GITHUB_OUTPUT
+    - id: domain
+      shell: bash
+      run: |
+        ENV=${{ inputs.environment }}
+        DOMAIN=$(echo '${{ inputs.vars }}' | jq -r '.DOMAIN')
+        if [ $ENV = "tmp" ]; then
+          if [ -z "${{ inputs.pr-number }}" ]; then
+            DOMAIN=$DOMAIN-${{ steps.origin-path.outputs.value }}
+          else
+            DOMAIN=$DOMAIN-${{ inputs.pr-number }}
+          fi
+        fi
+        echo "value=$DOMAIN" >> $GITHUB_OUTPUT
+    - shell: bash
+      name: Create a .env file
+      working-directory: ./cdk
+      run: |
         touch .env
         echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
-        echo "ENV=$ENV" >> .env
-        APP_DOMAIN=$(echo '${{ inputs.vars }}' | jq -r '.DOMAIN')
-        echo "DOMAIN=$APP_DOMAIN" >> .env
+        echo "ENV=${{ inputs.environment }}" >> .env
+        echo "STACK=${{ steps.stack.outputs.value }}" >> .env
+        echo "DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "AWS_ACCOUNT=${{ inputs.aws-account }}" >> .env
         echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
-        echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
-        echo "PROJECT_NAME=$PROJECT_NAME" >> .env
-        echo "stack=$STACK" >> $GITHUB_OUTPUT
-        echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
+        echo "ORIGIN_PATH=${{ steps.origin-path.outputs.value }}" >> .env
+        echo "PROJECT_NAME=${{ steps.project.outputs.value }}" >> .env
     - id: deploy
       shell: bash
       name: Deploy infrastructure
       working-directory: ./cdk
       run: |
-        STACK=${{ steps.variables.outputs.stack }}
+        STACK=${{ steps.stack.outputs.value }}
         yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
         BUCKET=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)
         echo "bucket=$(echo $BUCKET | sed -e 's/"//g')" >> $GITHUB_OUTPUT

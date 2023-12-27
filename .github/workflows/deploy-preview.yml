@@ -68,3 +68,4 @@ jobs:
           folder: ${{ needs.infra.outputs.folder }}
           bucket: ${{ needs.infra.outputs.bucket }}
           id: ${{ needs.infra.outputs.id }}
+          pr-number: ${{ github.event.pull_request.number }}

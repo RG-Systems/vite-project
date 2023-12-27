@@ -11,15 +11,16 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 type Props = cdk.StackProps & {
     domain?: string;
     path?: string;
+    project?: string;
     priceClass?: cloudfront.PriceClass;
     variables?: Record<string, string | undefined>;
 };
 
 export class Stack extends cdk.Stack {
-  constructor(scope: Construct, id: string, { path, variables, domain, priceClass, ...props }: Props) {
+  constructor(scope: Construct, id: string, { path, variables, domain, project, priceClass, ...props }: Props) {
     super(scope, id, props);
 
-    const bucket = this.getBucket(id);
+    const bucket = this.getBucket(project || id);
     const zone = this.getZone(domain);
     const certificate = this.getCertificate(zone, domain);
     const functionAssociation = this.getFunctionAssociation(variables);
@@ -36,12 +37,12 @@ export class Stack extends cdk.Stack {
     this.createOutput(distribution, bucket, domain);
   }
 
-  private getBucket(id: string): s3.Bucket {
-    const bucket = s3.Bucket.fromBucketName(this, 'Bucket', `${id}-storage`);
+  private getBucket(value: string): s3.Bucket {
+    const bucket = s3.Bucket.fromBucketName(this, 'Bucket', `${value}-storage`);
     if (bucket) return bucket as s3.Bucket;
     else {
       return new s3.Bucket(this, 'Bucket', {
-        bucketName: `${id}-storage`,
+        bucketName: `${value}-storage`,
         blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
         accessControl: s3.BucketAccessControl.PRIVATE,
         removalPolicy: cdk.RemovalPolicy.DESTROY,
