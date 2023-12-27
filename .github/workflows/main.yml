@@ -47,7 +47,7 @@ jobs:
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
           echo "DEBUG workflow >> "
-          echo ${{ vars }}
+          echo ${{ toJson(vars) }}
           echo "DEBUG workflow <<"
           touch .env
           echo "AWS_ACCOUNT=${{ vars.AWS_ACCOUNT }}" >> .env
