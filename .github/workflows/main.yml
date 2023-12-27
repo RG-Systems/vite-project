@@ -48,7 +48,7 @@ jobs:
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
           touch .env
-          echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .enva
+          echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
           echo "ENV=$ENV" >> .env
           echo "DOMAIN=$DOMAIN" >> .env
           echo "AWS_ACCOUNT=${{ secrets.AWS_ACCOUNT }}" >> .env

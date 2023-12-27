@@ -17,7 +17,7 @@ const projectName = JSON.parse(
 
 const app = new cdk.App();
 
-const { ORIGIN_PATH, ENV, DOMAIN, ...other } = process.env || {};
+const { AWS_ACCOUNT, AWS_REGION, ORIGIN_PATH, ENV, DOMAIN, ...other } = process.env || {};
 
 const variables = Object.keys(other).reduce((acc: Record<string, string>, key) => {
   if (key.startsWith('VARIABLE_')) {
@@ -44,8 +44,8 @@ console.log('DEBUG CDK <<<');
 
 const storageStack = new StorageStack(app, `${projectName}-storage`, {
   env: {
-    account: app.node.tryGetContext('account'),
-    region: app.node.tryGetContext('region'),
+    account: AWS_ACCOUNT,
+    region: AWS_REGION,
   }
 });
 
@@ -61,7 +61,7 @@ new DistributionStack(app, distribution, {
   variables,
   domain,
   env: {
-    account: app.node.tryGetContext('account'),
-    region: app.node.tryGetContext('region'),
+    account: AWS_ACCOUNT,
+    region: AWS_REGION,
   }
 }).addDependency(storageStack);
