@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      folder: ${{ steps.deploy.outputs.folder }}
+      folder: ${{ steps.variables.outputs.folder }}
       bucket: ${{ steps.deploy.outputs.bucket }}
       id: ${{ steps.deploy.outputs.id }}
       url: ${{ steps.deploy.outputs.url }}
@@ -35,7 +35,7 @@ jobs:
           yarn build
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::503479554940:role/RG-Systems-GH-Actions
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
           role-session-name: vp-cdk-deploy
           aws-region: us-east-1
       - id: variables
@@ -43,14 +43,13 @@ jobs:
         working-directory: ./cdk
         run: |
           ENV=${{ vars.ENV }}
-          DOMAIN=$ENV-${{ vars.DOMAIN }}
           ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
           touch .env
           echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
           echo "ENV=$ENV" >> .env
-          echo "DOMAIN=$DOMAIN" >> .env
+          echo "DOMAIN=${{ vars.DOMAIN }}" >> .env
           echo "AWS_ACCOUNT=${{ secrets.AWS_ACCOUNT }}" >> .env
           echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
           echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
@@ -63,7 +62,7 @@ jobs:
         run: |
           STACK=${{ steps.variables.outputs.stack }}
           yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
-          echo "folder=${{ steps.variables.outputs.folder }}" >> $GITHUB_OUTPUT
+          cat cdk-outputs.json
           echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "url=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
@@ -111,7 +110,7 @@ jobs:
           path: ./dist
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::503479554940:role/RG-Systems-GH-Actions
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
           role-session-name: vp-cdk-deploy
           aws-region: us-east-1
       - name: Deploy to S3
