@@ -46,14 +46,8 @@ jobs:
           ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
-          echo "DEBUG workflow >> "
-          echo ${{ toJson(vars) }}
-          echo "DEBUG workflow <<"
           touch .env
-          echo "AWS_ACCOUNT=${{ vars.AWS_ACCOUNT }}" >> .env
-          echo "AWS_REGION=${{ vars.AWS_REGION }}" >> .env
-          echo "DOMAIN=${{ vars.DOMAIN }}" >> .env
-          echo "VARIABLES=\"${{ vars.VARIABLES }}\"" >> .env
+          echo ${{ vars }} >> .env
           echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
           echo "PROJECT_NAME=$PROJECT_NAME" >> .env
           echo "stack=$STACK" >> $GITHUB_OUTPUT
