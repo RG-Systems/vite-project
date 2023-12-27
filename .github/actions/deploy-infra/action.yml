@@ -64,12 +64,14 @@ runs:
         touch .env
         echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
         echo "ENV=$ENV" >> .env
-        echo "DEBUG WORKFLOW: ${{ inputs.vars }}"
         echo "DOMAIN=${{ inputs.vars.DOMAIN }}" >> .env
         echo "AWS_ACCOUNT=${{ inputs.aws-account }}" >> .env
         echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
         echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
         echo "PROJECT_NAME=$PROJECT_NAME" >> .env
+        echo "DEBUG WORKFLOW:"
+        cat .env
+        echo "DEBUG WORKFLOW:"
         echo "stack=$STACK" >> $GITHUB_OUTPUT
         echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
     - id: deploy
