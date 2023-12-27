@@ -1,4 +1,4 @@
-name: Main
+name: Deploy QA environment
 
 concurrency: main
 
@@ -35,7 +35,6 @@ jobs:
 
   build:
     name: Build the application
-    environment: qa
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
