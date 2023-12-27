@@ -28,6 +28,7 @@ export class DistributionStack extends cdk.Stack {
         if (domain) {
           const [subdomain, ...domains] = domain.split('.');
           this.subdomain = subdomain;
+          console.log('DEBIG: ', JSON.stringify({ subdomain, domains, domain }, null, 2));
           const domainName = domains.join('.');
           this.zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName });
           this.certificate = new acm.Certificate(this, 'Certificate', {
