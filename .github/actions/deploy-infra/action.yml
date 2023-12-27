@@ -64,6 +64,7 @@ runs:
         touch .env
         echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
         echo "ENV=$ENV" >> .env
+        echo "DEBUG WORKFLOW: ${{ inputs.vars }}"
         echo "DOMAIN=${{ inputs.vars.DOMAIN }}" >> .env
         echo "AWS_ACCOUNT=${{ inputs.aws-account }}" >> .env
         echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
