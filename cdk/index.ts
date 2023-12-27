@@ -17,20 +17,6 @@ const app = new cdk.App();
 
 const { ORIGIN_PATH, ENV, DOMAIN, VARIABLES } = process.env || {};
 
-console.log('DEBUG CDK >>>');
-
-console.log(JSON.stringify(process.env, null, 2));
-
-console.log('=======================================');
-
-console.log('ORIGIN_PATH', ORIGIN_PATH);
-console.log('ENV', ENV);
-console.log('DOMAIN', DOMAIN);
-console.log('VARIABLES', VARIABLES);
-
-console.log('DEBUG CDK <<<');
-
-
 const storageStack = new StorageStack(app, `${projectName}-storage`, {
   env: {
     account: process.env.AWS_ACCOUNT,
