@@ -31,6 +31,16 @@ const variables = Object.keys(other).reduce((acc: Record<string, string>, key) =
   return acc;
 }, {});
 
+console.log('DEBUG CDK BIN:', JSON.stringify({
+  env,
+  domain,
+  distribution,
+  ORIGIN_PATH,
+  DOMAIN,
+  ENV,
+  projectName,
+}, null, 2));
+
 const storageStack = new StorageStack(app, `${projectName}-storage`, {
   env: {
     account: AWS_ACCOUNT,
