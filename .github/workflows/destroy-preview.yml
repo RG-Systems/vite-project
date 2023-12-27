@@ -1,0 +1,29 @@
+name: Destroy preview environment
+
+concurrency: tmp
+
+on:
+  pull_request:
+    types: [unlabeled, closed]
+
+jobs:
+  infra:
+    if: |
+      (github.event.action == 'unlabeled' && github.event.label.name == ':rocket: deploy') ||
+      (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, ':rocket: deploy'))
+    name: Destroy the infrastructure
+    environment: tmp
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+      - id: deploy-infra
+        uses: ./.github/actions/deploy-infra
+        with:
+          environment: tmp
+          aws-account: ${{ secrets.AWS_ACCOUNT }}
+          aws-region: ${{ secrets.AWS_REGION }}
