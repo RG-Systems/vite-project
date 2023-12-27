@@ -60,9 +60,9 @@ runs:
         ENV=${{ inputs.environment }}
         ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
         PROJECT_NAME=$(cat ../package.json | jq -r '.name')
-        STACK=$PROJECT_NAME-distribution-$ENV
+        STACK=$PROJECT_NAME-$ENV
         if [ $ENV = "tmp" ]; then
-          STACK=$PROJECT_NAME-distribution-$ENV-$ORIGIN_PATH
+          STACK=$PROJECT_NAME-$ENV-$ORIGIN_PATH
         fi
         touch .env
         echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
