@@ -109,9 +109,11 @@ runs:
       run: |
         touch .env
         echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
+        sed -i '/VARIABLE_DOMAIN/d' .env
+        echo "VARIABLE_DOMAIN=${{ steps.domain.outputs.value }}" >> .env
+        echo "DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "ENV=${{ inputs.environment }}" >> .env
         echo "STACK=${{ steps.stack.outputs.value }}" >> .env
-        echo "DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "AWS_ACCOUNT=${{ inputs.aws-account }}" >> .env
         echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
         echo "ORIGIN_PATH=${{ steps.origin-path.outputs.value }}" >> .env
