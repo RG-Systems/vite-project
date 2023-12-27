@@ -56,16 +56,23 @@ runs:
         role-session-name: vp-cdk-deploy
         aws-region: ${{ inputs.aws-region }}
     - id: origin-path
+      name: Get origin path
       shell: bash
       run: |
         ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
         echo "value=$ORIGIN_PATH" >> $GITHUB_OUTPUT
+        echo "RESULT >>>"
+        echo $ORIGIN_PATH
     - id: project
+      name: Get project name
       shell: bash
       run: |
         PROJECT_NAME=$(cat ./package.json | jq -r '.name')
         echo "value=$PROJECT_NAME" >> $GITHUB_OUTPUT
+        echo "RESULT >>>"
+        echo $PROJECT_NAME
     - id: stack
+      name: Get stack name
       shell: bash
       run: |
         ENV=${{ inputs.environment }}
@@ -78,7 +85,10 @@ runs:
           fi
         fi
         echo "value=$STACK" >> $GITHUB_OUTPUT
+        echo "RESULT >>>"
+        echo $STACK
     - id: domain
+      name: Get domain name
       shell: bash
       run: |
         ENV=${{ inputs.environment }}
@@ -91,6 +101,8 @@ runs:
           fi
         fi
         echo "value=$DOMAIN" >> $GITHUB_OUTPUT
+        echo "RESULT >>>"
+        echo $DOMAIN
     - shell: bash
       name: Create a .env file
       working-directory: ./cdk
@@ -104,6 +116,8 @@ runs:
         echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
         echo "ORIGIN_PATH=${{ steps.origin-path.outputs.value }}" >> .env
         echo "PROJECT_NAME=${{ steps.project.outputs.value }}" >> .env
+        echo "RESULT >>>"
+        cat .env
     - id: deploy
       shell: bash
       name: Deploy infrastructure
@@ -116,6 +130,8 @@ runs:
         echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
         URL=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)
         echo "url=$(echo $URL | sed -e 's/"//g')" >> $GITHUB_OUTPUT
+        echo "RESULT >>>"
+        cat cdk-outputs.json
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
