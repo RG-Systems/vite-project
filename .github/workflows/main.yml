@@ -65,7 +65,7 @@ jobs:
           echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           URL=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)
-          PARSED=$(echo $URL | sed -e 's/"//')
+          PARSED=$(echo $URL | sed -e 's/"//g')
           echo "url=$PARSED" >> $GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4

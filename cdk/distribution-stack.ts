@@ -18,6 +18,7 @@ type Props = cdk.StackProps & {
 };
 
 export class DistributionStack extends cdk.Stack {
+    private subdomain: string = '';
     private zone: route53.IHostedZone;
     private certificate: acm.ICertificate;
 
@@ -25,7 +26,9 @@ export class DistributionStack extends cdk.Stack {
         super(scope, id, props);
 
         if (domain) {
-          const domainName = domain.split('.').slice(1).join('.');
+          const [subdomain, ...domains] = domain.split('.');
+          this.subdomain = subdomain;
+          const domainName = domains.join('.');
           this.zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName });
           this.certificate = new acm.Certificate(this, 'Certificate', {
             domainName: domain,
@@ -36,7 +39,9 @@ export class DistributionStack extends cdk.Stack {
         const envsHandler = new cloudfront.Function(this, 'Function', {
           code: cloudfront.FunctionCode.fromInline(
             "function handler(event) {" +
-              "if (!event.request.uri.endsWith('/env.json')) return event.request;" +
+              "if (!event.request.uri.endsWith('/env.json')) {" +
+                "return event.request;" +
+              "}" +
               "return {" +
                 "statusCode: 200," +
                 "statusDescription: 'OK'," +
@@ -45,7 +50,7 @@ export class DistributionStack extends cdk.Stack {
                     "value: 'application/json;charset=UTF-8'," +
                   "}," +
                 "}," +
-                `body: JSON.stringify(${JSON.stringify(variables)},` +
+                `body: JSON.stringify(${JSON.stringify(variables)}),` +
               "};" +
             "}"
           ),
@@ -80,11 +85,13 @@ export class DistributionStack extends cdk.Stack {
         if (domain) {
           new route53.ARecord(this, 'ARecord', {
             zone: this.zone,
+            recordName: this.subdomain,
             target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
           });
 
           new route53.AaaaRecord(this, "AliasRecord", {
             zone: this.zone,
+            recordName: this.subdomain,
             target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
           });
         }
