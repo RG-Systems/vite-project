@@ -12,7 +12,6 @@ export class StorageStack extends cdk.Stack {
 
         this.bucket = new s3.Bucket(this, 'Bucket', {
             bucketName: id,
-            autoDeleteObjects: true,
             blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
             accessControl: s3.BucketAccessControl.PRIVATE,
             removalPolicy: cdk.RemovalPolicy.DESTROY,
