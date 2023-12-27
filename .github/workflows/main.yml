@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - id: infra-deploy
-        uses: .github/actions/infra-deploy
+        uses: ./.github/actions/infra-deploy
         with:
           environment: qa
 
@@ -32,7 +32,7 @@ jobs:
     environment: qa
     runs-on: ubuntu-latest
     steps:
-      - uses: .github/actions/build-app
+      - uses: ./.github/actions/build-app
 
   deploy:
     environment:
@@ -51,7 +51,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: .github/actions/deploy-app
+      - uses: ./.github/actions/deploy-app
         with:
           folder: ${{ needs.infra.outputs.folder }}
           bucket: ${{ needs.infra.outputs.bucket }}
