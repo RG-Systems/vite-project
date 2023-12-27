@@ -31,7 +31,7 @@ jobs:
           environment: qa
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-          vars: ${{ vars }}
+          vars: ${{ toJson(vars) }}
 
   build:
     name: Build the application
