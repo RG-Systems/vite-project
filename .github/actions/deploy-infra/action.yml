@@ -62,7 +62,7 @@ runs:
         PROJECT_NAME=$(cat ../package.json | jq -r '.name')
         STACK=$PROJECT_NAME-distribution-$ENV
         touch .env
-        echo '${{ toJson(inputs.vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
+        echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
         echo "ENV=$ENV" >> .env
         echo "DOMAIN=${{ inputs.vars.DOMAIN }}" >> .env
         echo "AWS_ACCOUNT=${{ inputs.aws-account }}" >> .env
