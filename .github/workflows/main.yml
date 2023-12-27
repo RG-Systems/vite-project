@@ -42,11 +42,15 @@ jobs:
         name: Get variables
         working-directory: ./cdk
         run: |
+          ENV=${{ vars.ENV }}
+          DOMAIN=$ENV-${{ vars.DOMAIN }}
           ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
           STACK=$PROJECT_NAME-distribution-$ENV
           touch .env
-          echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
+          echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .enva
+          echo "ENV=$ENV" >> .env
+          echo "DOMAIN=$DOMAIN" >> .env
           echo "AWS_ACCOUNT=${{ secrets.AWS_ACCOUNT }}" >> .env
           echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
           echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env

@@ -22,7 +22,7 @@ const { ORIGIN_PATH, ENV, DOMAIN, ...other } = process.env || {};
 const variables = Object.keys(other).reduce((acc: Record<string, string>, key) => {
   if (key.startsWith('VARIABLE_')) {
     const name = key.replace('VARIABLE_', '');
-    acc[name] = other[name] || '';
+    acc[name] = other[key] || '';
   }
 
   return acc;
