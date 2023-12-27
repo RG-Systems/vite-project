@@ -29,27 +29,26 @@ export class DistributionStack extends cdk.Stack {
           this.zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName });
           this.certificate = new acm.Certificate(this, 'Certificate', {
             domainName: domain,
-            subjectAlternativeNames: [`*.${domainName}`],
             validation: acm.CertificateValidation.fromDns(this.zone),
           });
         }
 
         const envsHandler = new cloudfront.Function(this, 'Function', {
-          code: cloudfront.FunctionCode.fromInline(`
-          function handler(event) {
-            if (!event.request.uri.endsWith('/env.json')) return event.request;
-            return {
-              statusCode: 200,
-              statusDescription: 'OK',
-              headers: {
-                  'content-type': {
-                    value: 'application/json;charset=UTF-8',
-                  },
-              },
-              body: ${JSON.stringify(variables)},
-            };
-          }
-          `),
+          code: cloudfront.FunctionCode.fromInline(
+            "function handler(event) {" +
+              "if (!event.request.uri.endsWith('/env.json')) return event.request;" +
+              "return {" +
+                "statusCode: 200," +
+                "statusDescription: 'OK'," +
+                "headers: {" +
+                  "'content-type': {" +
+                    "value: 'application/json;charset=UTF-8'," +
+                  "}," +
+                "}," +
+                `body: JSON.stringify(${JSON.stringify(variables)},` +
+              "};" +
+            "}"
+          ),
         });
 
         const distribution = new cloudfront.Distribution(this, 'Distribution', {
