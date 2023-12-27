@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: deploy-infra
-        uses: ./.github/actions/infra-deploy
+        uses: ./.github/actions/deploy-infra
         with:
           environment: qa
           aws-account: ${{ secrets.AWS_ACCOUNT }}
