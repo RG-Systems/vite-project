@@ -17,7 +17,16 @@ const projectName = JSON.parse(
 
 const app = new cdk.App();
 
-const { ORIGIN_PATH, ENV, DOMAIN, ...variables } = process.env || {};
+const { ORIGIN_PATH, ENV, DOMAIN, ...other } = process.env || {};
+
+const variables = Object.keys(other).reduce((acc: Record<string, string>, key) => {
+  if (key.startsWith('VARIABLE_')) {
+    const name = key.replace('VARIABLE_', '');
+    acc[name] = other[name] || '';
+  }
+
+  return acc;
+}, {});
 
 console.log('DEBUG CDK >>>');
 
