@@ -1,0 +1,82 @@
+
+name: Deploy infrastructure
+
+description: 'Deploy infrastructure'
+
+inputs:
+  environment:
+    description: 'The environment to deploy to'
+    required: true
+    default: 'qa'
+
+outputs:
+  folder:
+    description: 'The folder to upload'
+    value: ${{ steps.variables.outputs.folder }}
+  bucket:
+    description: 'The bucket to upload to'
+    value: ${{ steps.deploy.outputs.bucket }}
+  id:
+    description: 'The distribution id'
+    value: ${{ steps.deploy.outputs.id }}
+  url:
+    description: 'The distribution url'
+    value: ${{ steps.deploy.outputs.url }}
+
+
+runs:
+  using: composite
+
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+        cache: 'yarn'
+    - name: Install and build cdk
+      shell: bash
+      working-directory: ./cdk
+      run: |
+        yarn install --frozen-lockfile
+        yarn build
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
+        role-session-name: vp-cdk-deploy
+        aws-region: us-east-1
+    - id: variables
+      shell: bash
+      name: Get variables
+      working-directory: ./cdk
+      run: |
+        ENV=${{ inputs.environment }}
+        ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
+        PROJECT_NAME=$(cat ../package.json | jq -r '.name')
+        STACK=$PROJECT_NAME-distribution-$ENV
+        touch .env
+        echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
+        echo "ENV=$ENV" >> .env
+        echo "DOMAIN=${{ vars.DOMAIN }}" >> .env
+        echo "AWS_ACCOUNT=${{ secrets.AWS_ACCOUNT }}" >> .env
+        echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
+        echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
+        echo "PROJECT_NAME=$PROJECT_NAME" >> .env
+        echo "stack=$STACK" >> $GITHUB_OUTPUT
+        echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
+    - id: deploy
+      shell: bash
+      name: Deploy infrastructure
+      working-directory: ./cdk
+      run: |
+        STACK=${{ steps.variables.outputs.stack }}
+        yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
+        echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
+        echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
+        URL=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)
+        PARSED=$(echo $URL | sed -e 's/"//g')
+        echo "url=$PARSED" >> $GITHUB_OUTPUT
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cdk-outputs
+        path: ./cdk/cdk-outputs.json

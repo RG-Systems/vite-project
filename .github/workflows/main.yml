@@ -13,84 +13,26 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      folder: ${{ steps.variables.outputs.folder }}
-      bucket: ${{ steps.deploy.outputs.bucket }}
-      id: ${{ steps.deploy.outputs.id }}
-      url: ${{ steps.deploy.outputs.url }}
+      folder: ${{ steps.infra-deploy.outputs.folder }}
+      bucket: ${{ steps.infra-deploy.outputs.bucket }}
+      id: ${{ steps.infra-deploy.outputs.id }}
+      url: ${{ steps.infra-deploy.outputs.url }}
 
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - id: infra-deploy
+        uses: .github/actions/infra-deploy
         with:
-          node-version: 20.x
-          cache: 'yarn'
-      - name: Install and build cdk
-        working-directory: ./cdk
-        run: |
-          yarn install --frozen-lockfile
-          yarn build
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
-          role-session-name: vp-cdk-deploy
-          aws-region: us-east-1
-      - id: variables
-        name: Get variables
-        working-directory: ./cdk
-        run: |
-          ENV=${{ vars.ENV }}
-          ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
-          PROJECT_NAME=$(cat ../package.json | jq -r '.name')
-          STACK=$PROJECT_NAME-distribution-$ENV
-          touch .env
-          echo '${{ toJson(vars) }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
-          echo "ENV=$ENV" >> .env
-          echo "DOMAIN=${{ vars.DOMAIN }}" >> .env
-          echo "AWS_ACCOUNT=${{ secrets.AWS_ACCOUNT }}" >> .env
-          echo "AWS_REGION=${{ secrets.AWS_REGION }}" >> .env
-          echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
-          echo "PROJECT_NAME=$PROJECT_NAME" >> .env
-          echo "stack=$STACK" >> $GITHUB_OUTPUT
-          echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
-      - id: deploy
-        name: Deploy infrastructure
-        working-directory: ./cdk
-        run: |
-          STACK=${{ steps.variables.outputs.stack }}
-          yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
-          echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
-          URL=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)
-          PARSED=$(echo $URL | sed -e 's/"//g')
-          echo "url=$PARSED" >> $GITHUB_OUTPUT
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cdk-outputs
-          path: ./cdk/cdk-outputs.json
+          environment: qa
 
   build:
     environment: qa
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20.x
-          cache: 'yarn'
-      - name: Install and build app
-        run: |
-          yarn install --frozen-lockfile
-          yarn build
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: application
-          path: ./dist
+      - uses: .github/actions/build-app
 
   deploy:
     environment:
@@ -98,6 +40,7 @@ jobs:
       url: ${{ needs.infra.outputs.url }}
 
     runs-on: ubuntu-latest
+
     needs:
       - infra
       - build
@@ -108,18 +51,8 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: .github/actions/deploy-app
         with:
-          name: application
-          path: ./dist
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
-          role-session-name: vp-cdk-deploy
-          aws-region: us-east-1
-      - name: Deploy to S3
-        run: |
-          aws s3 sync ./dist s3://${{ needs.infra.outputs.bucket }}/${{ needs.infra.outputs.folder }}
-          aws cloudfront create-invalidation --distribution-id ${{ needs.infra.outputs.id }} --paths "/*"
+          folder: ${{ needs.infra.outputs.folder }}
+          bucket: ${{ needs.infra.outputs.bucket }}
+          id: ${{ needs.infra.outputs.id }}

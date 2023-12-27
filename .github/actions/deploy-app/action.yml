@@ -1,0 +1,35 @@
+name: Deploy the app
+
+description: Deploy the app
+
+inputs:
+  bucket:
+    description: 'The bucket to upload to'
+    required: true
+  folder:
+    description: 'The folder to upload'
+    required: true
+  id:
+    description: 'The distribution id'
+    required: true
+
+runs:
+  using: composite
+
+  steps:
+    - uses: actions/checkout@v4
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: application
+        path: ./dist
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
+        role-session-name: vp-cdk-deploy
+        aws-region: us-east-1
+    - name: Deploy to S3
+      shell: bash
+      run: |
+        aws s3 sync ./dist s3://${{ inputs.bucket }}/${{ inputs.folder }}
+        aws cloudfront create-invalidation --distribution-id ${{ inputs.id }} --paths "/*"
