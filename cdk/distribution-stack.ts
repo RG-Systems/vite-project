@@ -7,6 +7,7 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 type Props = cdk.StackProps & {
     path?: string;
@@ -28,9 +29,20 @@ export class DistributionStack extends cdk.Stack {
           this.zone = route53.HostedZone.fromLookup(this, 'Zone', { domainName });
           this.certificate = new acm.Certificate(this, 'Certificate', {
             domainName: domain,
+            subjectAlternativeNames: [`*.${domainName}`],
             validation: acm.CertificateValidation.fromDns(this.zone),
           });
         }
+
+        const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, 'OAI', {
+          comment: `OAI for ${bucket.bucketName}`
+        });
+
+        bucket.addToResourcePolicy(new iam.PolicyStatement({
+          actions: ['s3:GetObject'],
+          resources: [bucket.arnForObjects('*')],
+          principals: [new iam.CanonicalUserPrincipal(cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId)]
+        }));
 
         const envsHandler = new cloudfront.Function(this, 'Function', {
           code: cloudfront.FunctionCode.fromInline(`
@@ -63,7 +75,9 @@ export class DistributionStack extends cdk.Stack {
                 },
             ],
             defaultBehavior: {
-                origin: new origins.S3Origin(bucket, path ? { originPath: path } : undefined),
+                origin: new origins.S3Origin(bucket, { originPath: path, originAccessIdentity: cloudfrontOAI }),
+                compress: true,
+                allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 functionAssociations: [
                     {
@@ -82,12 +96,16 @@ export class DistributionStack extends cdk.Stack {
           });
         }
 
-        new cdk.CfnOutput(this, "DeploymentUrl", {
-          value: "https://" + distribution.domainName
+        new cdk.CfnOutput(this, 'DeploymentUrl', {
+          value: 'https://' + domain,
         });
 
-        new cdk.CfnOutput(this, "DistributionId", {
-          value: distribution.distributionId
+        new cdk.CfnOutput(this, 'DistributionUrl', {
+          value: 'https://' + distribution.domainName,
+        });
+
+        new cdk.CfnOutput(this, 'DistributionId', {
+          value: distribution.distributionId,
         });
 
         new cdk.CfnOutput(this, 'BucketName', {
