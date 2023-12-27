@@ -3,6 +3,12 @@ name: Deploy the app
 description: Deploy the app
 
 inputs:
+  aws-account:
+    description: 'The AWS account to deploy to'
+    required: true
+  aws-region:
+    description: 'The AWS region to deploy to'
+    required: true
   bucket:
     description: 'The bucket to upload to'
     required: true
@@ -24,9 +30,9 @@ runs:
         path: ./dist
     - uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
+        role-to-assume: arn:aws:iam::${{ inputs.aws-account }}:role/RG-Systems-GH-Actions
         role-session-name: vp-cdk-deploy
-        aws-region: us-east-1
+        aws-region: ${{ inputs.aws-region }}
     - name: Deploy to S3
       shell: bash
       run: |

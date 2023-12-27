@@ -9,7 +9,7 @@ on:
 
 jobs:
   infra:
-    name: Deploy the infra
+    name: Deploy the infrastructure
     environment: qa
     runs-on: ubuntu-latest
 
@@ -31,10 +31,10 @@ jobs:
           environment: qa
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-          vars: ${{ toJSON(vars) }}
+          vars: ${{ vars }}
 
   build:
-    name: Build the app
+    name: Build the application
     environment: qa
     runs-on: ubuntu-latest
     steps:
@@ -42,7 +42,7 @@ jobs:
       - uses: ./.github/actions/build-app
 
   deploy:
-    name: Deploy the app
+    name: Deploy the application
     environment:
       name: qa
       url: ${{ needs.infra.outputs.url }}
@@ -62,6 +62,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/deploy-app
         with:
+          aws-account: ${{ secrets.AWS_ACCOUNT }}
+          aws-region: ${{ secrets.AWS_REGION }}
           folder: ${{ needs.infra.outputs.folder }}
           bucket: ${{ needs.infra.outputs.bucket }}
           id: ${{ needs.infra.outputs.id }}

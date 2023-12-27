@@ -49,9 +49,9 @@ runs:
         yarn build
     - uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
+        role-to-assume: arn:aws:iam::${{ inputs.aws-account }}:role/RG-Systems-GH-Actions
         role-session-name: vp-cdk-deploy
-        aws-region: us-east-1
+        aws-region: ${{ inputs.aws-region }}
     - id: variables
       shell: bash
       name: Get variables
