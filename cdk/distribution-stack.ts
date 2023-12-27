@@ -13,7 +13,7 @@ type Props = cdk.StackProps & {
     bucket: Bucket;
     domain?: string;
     priceClass?: cloudfront.PriceClass;
-    variables?: Record<string, string>;
+    variables?: string;
 };
 
 export class DistributionStack extends cdk.Stack {
@@ -32,20 +32,20 @@ export class DistributionStack extends cdk.Stack {
           });
         }
 
+        const body = variables ? this.getVariables(variables) : {};
+
         const envsHandler = new cloudfront.Function(this, 'Function', {
           code: cloudfront.FunctionCode.fromInline(`
             function handler(event) {
               if (!event.request.uri.endsWith('/env.json')) return event.request;
-
-                return {
-                  statusCode: 200,
-                  statusDescription: 'OK',
-                  headers: {
-                  'content-type': {
-                    value: 'application/json;charset=UTF-8',
-                  },
+              return {
+                statusCode: 200,
+                statusDescription: 'OK',
+                headers: {
+                'content-type': {
+                  value: 'application/json;charset=UTF-8',
                 },
-                body: JSON.stringify(${JSON.stringify(variables)}),
+                body: JSON.stringify(${JSON.stringify(body)}),
               };
             }
           `),
@@ -54,7 +54,7 @@ export class DistributionStack extends cdk.Stack {
         const distribution = new cloudfront.Distribution(this, 'Distribution', {
             priceClass: priceClass ?? cloudfront.PriceClass.PRICE_CLASS_100,
             certificate: this.certificate,
-            domainNames: [domain ?? ''],
+            domainNames: domain ? [domain] : undefined,
             defaultRootObject: 'index.html',
             errorResponses: [
                 {
@@ -64,7 +64,7 @@ export class DistributionStack extends cdk.Stack {
                 },
             ],
             defaultBehavior: {
-                origin: new origins.S3Origin(bucket, { originPath: path  ?? '' }),
+                origin: new origins.S3Origin(bucket, path ? { originPath: path } : undefined),
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 functionAssociations: [
                     {
@@ -94,5 +94,18 @@ export class DistributionStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'BucketName', {
           value: bucket.bucketName,
         });
+    }
+
+    /**
+     * Converts a string of variables to a JSON object
+     * @param variables {string}
+     * @example "AWS_ACCOUNT=123456789012 AWS_REGION=us-east-1" -> "{ AWS_ACCOUNT=123456789012, AWS_REGION=us-east-1 }"
+     */
+    private getVariables(variables: string) {
+      return variables.split(' ').reduce((acc: Record<string, string>, curr: string) => {
+        const [key, value] = curr.split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
     }
 }
