@@ -41,12 +41,15 @@ jobs:
       - id: deploy
         name: Deploy infrastructure
         working-directory: ./cdk
-        env:
-          ENV: qa
-          ORIGIN_PATH: $(echo $GITHUB_SHA | cut -c 1-6)
-          PROJECT_NAME: $(cat ../package.json | jq -r '.name')
-          STACK: $PROJECT_NAME-distribution-$ENV
         run: |
+          ENV=qa
+          ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
+          PROJECT_NAME=$(cat ../package.json | jq -r '.name')
+          STACK=$PROJECT_NAME-distribution-$ENV
+          touch .env
+          echo "ENV=$ENV" >> .env
+          echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
+          echo "PROJECT_NAME=$PROJECT_NAME" >> .env
           yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
           echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
           echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
