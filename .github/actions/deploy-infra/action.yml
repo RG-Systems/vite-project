@@ -61,6 +61,9 @@ runs:
         ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
         PROJECT_NAME=$(cat ../package.json | jq -r '.name')
         STACK=$PROJECT_NAME-distribution-$ENV
+        if [ $ENV = "tmp" ]; then
+          STACK=$PROJECT_NAME-distribution-$ENV-$ORIGIN_PATH
+        fi
         touch .env
         echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
         echo "ENV=$ENV" >> .env
@@ -70,8 +73,6 @@ runs:
         echo "AWS_REGION=${{ inputs.aws-region }}" >> .env
         echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
         echo "PROJECT_NAME=$PROJECT_NAME" >> .env
-        echo "DEBUG WORKFLOW:"
-        echo "DEBUG WORKFLOW:"
         echo "stack=$STACK" >> $GITHUB_OUTPUT
         echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
     - id: deploy
