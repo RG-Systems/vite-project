@@ -18,7 +18,10 @@ const projectName = JSON.parse(
 const app = new cdk.App();
 
 const { AWS_ACCOUNT, AWS_REGION, ORIGIN_PATH, ENV, DOMAIN, ...other } = process.env || {};
-
+const env = (ENV || 'qa').toLowerCase().trim();
+const priceClass = env === 'prod' ? PriceClass.PRICE_CLASS_ALL : PriceClass.PRICE_CLASS_100;
+const distribution = env === 'tmp' ? `${projectName}-distribution-${env}-${ORIGIN_PATH}` : `${projectName}-distribution-${env}`;
+const domain = env === 'tmp' ? `${ORIGIN_PATH}-${DOMAIN}` : DOMAIN;
 const variables = Object.keys(other).reduce((acc: Record<string, string>, key) => {
   if (key.startsWith('VARIABLE_')) {
     const name = key.replace('VARIABLE_', '');
@@ -34,11 +37,6 @@ const storageStack = new StorageStack(app, `${projectName}-storage`, {
     region: AWS_REGION,
   }
 });
-
-const env = (ENV || 'qa').toLowerCase().trim();
-const priceClass = env === 'prod' ? PriceClass.PRICE_CLASS_ALL : PriceClass.PRICE_CLASS_100;
-const distribution = env === 'tmp' ? `${projectName}-distribution-${env}-${ORIGIN_PATH}` : `${projectName}-distribution-${env}`;
-const domain = env === 'tmp' ? `${ORIGIN_PATH}-${DOMAIN}` : DOMAIN;
 
 new DistributionStack(app, distribution, {
   bucket: storageStack.bucket,

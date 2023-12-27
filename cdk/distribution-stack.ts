@@ -10,9 +10,9 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 type Props = cdk.StackProps & {
-    path?: string;
     bucket: Bucket;
     domain?: string;
+    path?: string;
     priceClass?: cloudfront.PriceClass;
     variables?: Record<string, string | undefined>;
 };
@@ -33,16 +33,6 @@ export class DistributionStack extends cdk.Stack {
             validation: acm.CertificateValidation.fromDns(this.zone),
           });
         }
-
-        const cloudfrontOAI = new cloudfront.OriginAccessIdentity(this, 'OAI', {
-          comment: `OAI for ${bucket.bucketName}`
-        });
-
-        bucket.addToResourcePolicy(new iam.PolicyStatement({
-          actions: ['s3:GetObject'],
-          resources: [bucket.arnForObjects('*')],
-          principals: [new iam.CanonicalUserPrincipal(cloudfrontOAI.cloudFrontOriginAccessIdentityS3CanonicalUserId)]
-        }));
 
         const envsHandler = new cloudfront.Function(this, 'Function', {
           code: cloudfront.FunctionCode.fromInline(`
@@ -75,7 +65,7 @@ export class DistributionStack extends cdk.Stack {
                 },
             ],
             defaultBehavior: {
-                origin: new origins.S3Origin(bucket, { originPath: path, originAccessIdentity: cloudfrontOAI }),
+                origin: new origins.S3Origin(bucket, { originPath: path }),
                 compress: true,
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -90,9 +80,13 @@ export class DistributionStack extends cdk.Stack {
 
         if (domain) {
           new route53.ARecord(this, 'ARecord', {
-            recordName: domain,
-            target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
             zone: this.zone,
+            target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+          });
+
+          new route53.AaaaRecord(this, "AliasRecord", {
+            zone: this.zone,
+            target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
           });
         }
 

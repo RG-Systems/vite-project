@@ -65,6 +65,11 @@ jobs:
           echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "url=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs
+          path: ./cdk/cdk-outputs.json
 
   build:
     environment: qa
@@ -82,7 +87,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifact
+          name: application
           path: ./dist
 
   deploy:
@@ -105,7 +110,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: artifact
+          name: application
           path: ./dist
       - uses: aws-actions/configure-aws-credentials@v4
         with:
