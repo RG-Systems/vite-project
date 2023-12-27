@@ -35,8 +35,8 @@ console.log('DEBUG CDK <<<');
 
 const storageStack = new StorageStack(app, `${projectName}-storage`, {
   env: {
-    account: process.env.AWS_ACCOUNT,
-    region: process.env.AWS_REGION,
+    account: app.node.tryGetContext('account'),
+    region: app.node.tryGetContext('region'),
   }
 });
 
@@ -52,7 +52,7 @@ new DistributionStack(app, distribution, {
   variables,
   domain,
   env: {
-    account: process.env.AWS_ACCOUNT,
-    region: process.env.AWS_REGION,
+    account: app.node.tryGetContext('account'),
+    region: app.node.tryGetContext('region'),
   }
 }).addDependency(storageStack);
