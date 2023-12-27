@@ -41,19 +41,29 @@ jobs:
           role-to-assume: arn:aws:iam::503479554940:role/RG-Systems-GH-Actions
           role-session-name: vp-cdk-deploy
           aws-region: us-east-1
-      - id: deploy
-        name: Deploy infrastructure
+      - id: variables
+        name: Get variables
         working-directory: ./cdk
         run: |
           ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
           PROJECT_NAME=$(cat ../package.json | jq -r '.name')
-          STACK=$PROJECT_NAME-distribution-$ENV
+          STACK=$PROJECT_NAME-distribution-${{ github.env.ENV }}
           touch .env
-          echo ${{ github.env }} >> .env
+          echo "AWS_ACCOUNT=${{ vars.AWS_ACCOUNT }}" >> .env
+          echo "AWS_REGION=${{ vars.AWS_REGION }}" >> .env
+          echo "DOMAIN=${{ vars.DOMAIN }}" >> .env
+          echo "VARIABLES=${{ vars.VARIABLES }}" >> .env
           echo "ORIGIN_PATH=$ORIGIN_PATH" >> .env
           echo "PROJECT_NAME=$PROJECT_NAME" >> .env
-          yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
+          echo "stack=$STACK" >> $GITHUB_OUTPUT
           echo "folder=$ORIGIN_PATH" >> $GITHUB_OUTPUT
+      - id: deploy
+        name: Deploy infrastructure
+        working-directory: ./cdk
+        run: |
+          STACK=${{ steps.variables.outputs.stack }}
+          yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
+          echo "folder=${{ steps.variables.outputs.folder }}" >> $GITHUB_OUTPUT
           echo "bucket=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
           echo "url=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)" >> $GITHUB_OUTPUT
