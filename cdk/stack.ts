@@ -6,6 +6,7 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 
 type Props = cdk.StackProps & {
@@ -20,11 +21,22 @@ export class Stack extends cdk.Stack {
   constructor(scope: Construct, id: string, { path, variables, domain, project, priceClass, ...props }: Props) {
     super(scope, id, props);
 
+    const originAccessIdentity = this.getOriginAccessIdentity();
     const bucket = this.getBucket(project || id);
+    bucket.addToResourcePolicy(new iam.PolicyStatement({
+      actions: ['s3:GetObject'],
+      resources: [bucket.arnForObjects('*')],
+      principals: [new iam.CanonicalUserPrincipal(
+        originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
+      )]
+    }));
+
     const zone = this.getZone(domain);
     const certificate = this.getCertificate(zone, domain);
     const functionAssociation = this.getFunctionAssociation(variables);
+    const origin = this.getOrigin(bucket, originAccessIdentity, path);
     const distribution = this.getDistribution(
+      origin,
       bucket,
       functionAssociation,
       certificate,
@@ -35,6 +47,10 @@ export class Stack extends cdk.Stack {
 
     this.createSubdomainRecords(distribution, zone, domain);
     this.createOutput(distribution, bucket, domain);
+  }
+
+  private getOriginAccessIdentity(): cloudfront.OriginAccessIdentity {
+    return new cloudfront.OriginAccessIdentity(this, 'OriginAccessIdentity');
   }
 
   private getBucket(value: string): s3.Bucket {
@@ -71,6 +87,10 @@ export class Stack extends cdk.Stack {
     return undefined;
   }
 
+  private getOrigin(bucket: s3.Bucket, originAccessIdentity: cloudfront.OriginAccessIdentity, path?: string): origins.S3Origin {
+    return  new origins.S3Origin(bucket, { originPath: path, originAccessIdentity });
+  }
+
   private getFunctionAssociation(variables?: Record<string, string | undefined>): cloudfront.FunctionAssociation | undefined{
     if (variables === undefined) return undefined;
     return {
@@ -98,6 +118,7 @@ export class Stack extends cdk.Stack {
   }
 
   private getDistribution(
+    origin: origins.S3Origin,
     bucket: s3.Bucket,
     functionAssociation?: cloudfront.FunctionAssociation,
     certificate?: acm.ICertificate,
@@ -118,8 +139,8 @@ export class Stack extends cdk.Stack {
         },
       ],
       defaultBehavior: {
+        origin,
         compress: true,
-        origin: new origins.S3Origin(bucket, { originPath: path }),
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         functionAssociations: functionAssociation ? [functionAssociation] : undefined,

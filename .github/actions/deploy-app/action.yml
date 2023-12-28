@@ -40,7 +40,7 @@ runs:
       shell: bash
       run: |
         FOLDER=${{ inputs.folder }}
-        if [ -z "${{ inputs.pr-number }}" ]; then
+        if [ ! -z "${{ inputs.pr-number }}" ]; then
           FOLDER=${{ inputs.pr-number }}/${{ inputs.folder }}}
         fi
         aws s3 sync ./dist s3://${{ inputs.bucket }}/$FOLDER
