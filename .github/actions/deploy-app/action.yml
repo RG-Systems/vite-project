@@ -41,7 +41,7 @@ runs:
       run: |
         FOLDER=${{ inputs.folder }}
         if [ ! -z "${{ inputs.pr-number }}" ]; then
-          FOLDER=${{ inputs.pr-number }}/${{ inputs.folder }}}
+          FOLDER=${{ inputs.pr-number }}/${{ inputs.folder }}
         fi
         aws s3 sync ./dist s3://${{ inputs.bucket }}/$FOLDER
         aws cloudfront create-invalidation --distribution-id ${{ inputs.id }} --paths "$FOLDER/*"
