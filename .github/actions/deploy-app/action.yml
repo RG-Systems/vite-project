@@ -44,4 +44,4 @@ runs:
           FOLDER=${{ inputs.pr-number }}/${{ inputs.folder }}
         fi
         aws s3 sync ./dist s3://${{ inputs.bucket }}/$FOLDER
-        aws cloudfront create-invalidation --distribution-id ${{ inputs.id }} --paths "$FOLDER/*"
+        aws cloudfront create-invalidation --distribution-id ${{ inputs.id }} --paths "/*"
