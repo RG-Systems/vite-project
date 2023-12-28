@@ -38,10 +38,11 @@ runs:
       name: Get origin path
       shell: bash
       run: |
-        ORIGIN_PATH=$(echo $GITHUB_SHA | cut -c 1-6)
+        SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-6)
+        ORIGIN_PATH=$SHA
         if [ $ENV = "tmp" ]; then
           if [ -n "${{ inputs.pr-number }}" ]; then
-            ORIGIN_PATH=${{ inputs.pr-number }}
+            ORIGIN_PATH=${{ inputs.pr-number }}/$SHORT_SHA
           fi
         fi
         echo "value=$ORIGIN_PATH" >> $GITHUB_OUTPUT
