@@ -39,10 +39,10 @@ runs:
       shell: bash
       run: |
         SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-6)
-        ORIGIN_PATH=$SHA
+        ORIGIN_PATH=$SHORT_SHA
         if [ $ENV = "tmp" ]; then
           if [ -n "${{ inputs.pr-number }}" ]; then
-            ORIGIN_PATH=${{ inputs.pr-number }}/$SHORT_SHA
+            ORIGIN_PATH="${{ inputs.pr-number }}/$SHORT_SHA"
           fi
         fi
         echo "value=$ORIGIN_PATH" >> $GITHUB_OUTPUT
