@@ -22,15 +22,7 @@ export class Stack extends cdk.Stack {
     super(scope, id, props);
 
     const originAccessIdentity = this.getOriginAccessIdentity();
-    const bucket = this.getBucket(project || id);
-    bucket.addToResourcePolicy(new iam.PolicyStatement({
-      actions: ['s3:GetObject'],
-      resources: [bucket.arnForObjects('*')],
-      principals: [new iam.CanonicalUserPrincipal(
-        originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
-      )]
-    }));
-
+    const bucket = this.getBucket(project || id, originAccessIdentity);
     const zone = this.getZone(domain);
     const certificate = this.getCertificate(zone, domain);
     const functionAssociation = this.getFunctionAssociation(variables);
@@ -53,17 +45,23 @@ export class Stack extends cdk.Stack {
     return new cloudfront.OriginAccessIdentity(this, 'OriginAccessIdentity');
   }
 
-  private getBucket(value: string): s3.Bucket {
-    const bucket = s3.Bucket.fromBucketName(this, 'Bucket', `${value}-storage`);
-    if (bucket) return bucket as s3.Bucket;
-    else {
-      return new s3.Bucket(this, 'Bucket', {
-        bucketName: `${value}-storage`,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-        accessControl: s3.BucketAccessControl.PRIVATE,
-        removalPolicy: cdk.RemovalPolicy.DESTROY,
-      });
-    }
+  private getBucket(projectName: string, originAccessIdentity: cloudfront.OriginAccessIdentity): s3.Bucket {
+    const bucket = new s3.Bucket(this, 'Bucket', {
+      bucketName: `${projectName}-storage`,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      accessControl: s3.BucketAccessControl.PRIVATE,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    bucket.addToResourcePolicy(new iam.PolicyStatement({
+      actions: ['s3:GetObject'],
+      resources: [bucket.arnForObjects('*')],
+      principals: [new iam.CanonicalUserPrincipal(
+        originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
+      )]
+    }));
+
+    return bucket;
   }
 
   private getZone(domain?: string): route53.IHostedZone | undefined {
