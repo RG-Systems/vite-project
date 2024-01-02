@@ -50,7 +50,7 @@ export class Stack extends cdk.Stack {
       bucketName: `${projectName}-storage`,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       accessControl: s3.BucketAccessControl.PRIVATE,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     bucket.addToResourcePolicy(new iam.PolicyStatement({
