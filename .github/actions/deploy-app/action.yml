@@ -18,6 +18,9 @@ inputs:
   id:
     description: 'The distribution id'
     required: true
+  pr-number:
+    description: 'The PR number'
+    required: false
 
 runs:
   using: composite

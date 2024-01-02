@@ -14,27 +14,6 @@ inputs:
   aws-region:
     description: 'The AWS region to deploy to'
     required: true
-  vars:
-    description: 'The variables to pass to the CDK'
-    required: true
-  pr-number:
-    description: 'The ticket number'
-    required: false
-
-outputs:
-  folder:
-    description: 'The folder to upload'
-    value: ${{ steps.origin-path.outputs.value }}
-  bucket:
-    description: 'The bucket to upload to'
-    value: ${{ steps.deploy.outputs.bucket }}
-  id:
-    description: 'The distribution id'
-    value: ${{ steps.deploy.outputs.id }}
-  url:
-    description: 'The distribution url'
-    value: ${{ steps.deploy.outputs.url }}
-
 
 runs:
   using: composite
@@ -126,22 +105,11 @@ runs:
         echo "PROJECT_NAME=${{ steps.project.outputs.value }}" >> .env
         echo "RESULT >>>"
         cat .env
-    - id: deploy
-      shell: bash
-      name: Deploy infrastructure
+    - shell: bash
+      name: Destroy distribution
       working-directory: ./cdk
       run: |
+        BUCKET=${{ steps.project.outputs.value }}-storage
         STACK=${{ steps.stack.outputs.value }}
-        yarn cdk deploy $STACK --require-approval never --outputs-file cdk-outputs.json
-        BUCKET=$(jq --arg key "$STACK" '.[$key].BucketName' cdk-outputs.json)
-        echo "bucket=$(echo $BUCKET | sed -e 's/"//g')" >> $GITHUB_OUTPUT
-        echo "id=$(jq --arg key "$STACK" '.[$key].DistributionId' cdk-outputs.json)" >> $GITHUB_OUTPUT
-        URL=$(jq --arg key "$STACK" '.[$key].DeploymentUrl' cdk-outputs.json)
-        echo "url=$(echo $URL | sed -e 's/"//g')" >> $GITHUB_OUTPUT
-        echo "RESULT >>>"
-        cat cdk-outputs.json
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: cdk-outputs
-        path: ./cdk/cdk-outputs.json
+        yarn cdk destroy $STACK --require-approval never --outputs-file cdk-outputs.json
+        aws s3 rm s3://$BUCKET/${{ steps.origin-path.outputs.value }} --recursive

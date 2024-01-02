@@ -1,16 +1,18 @@
-name: Main
+name: Deploy preview environment
 
-concurrency: main
+concurrency: tmp
 
 on:
-  push:
-    branches:
-      - main
+  pull_request:
+    types: [labeled, opened, synchronize]
 
 jobs:
   infra:
+    if: |
+      (github.event.action == 'labeled' && github.event.label.name == 'preview') ||
+      (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'preview'))
     name: Deploy the infrastructure
-    environment: qa
+    environment: tmp
     runs-on: ubuntu-latest
 
     outputs:
@@ -28,14 +30,14 @@ jobs:
       - id: deploy-infra
         uses: ./.github/actions/deploy-infra
         with:
-          environment: qa
+          environment: tmp
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
           vars: ${{ toJson(vars) }}
+          pr-number: ${{ github.event.pull_request.number }}
 
   build:
     name: Build the application
-    environment: qa
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +46,7 @@ jobs:
   deploy:
     name: Deploy the application
     environment:
-      name: qa
+      name: tmp
       url: ${{ needs.infra.outputs.url }}
 
     runs-on: ubuntu-latest
@@ -67,3 +69,4 @@ jobs:
           folder: ${{ needs.infra.outputs.folder }}
           bucket: ${{ needs.infra.outputs.bucket }}
           id: ${{ needs.infra.outputs.id }}
+          pr-number: ${{ github.event.pull_request.number }}

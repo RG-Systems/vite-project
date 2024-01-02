@@ -1,0 +1,28 @@
+name: Destroy preview environment
+
+concurrency: tmp
+
+on:
+  pull_request:
+    types: [unlabeled, closed]
+
+jobs:
+  infra:
+    if: |
+      (github.event.action == 'unlabeled' && github.event.label.name == 'preview') ||
+      (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview'))
+    name: Destroy the infrastructure
+    environment: tmp
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/destroy-infra
+        with:
+          environment: tmp
+          aws-account: ${{ secrets.AWS_ACCOUNT }}
+          aws-region: ${{ secrets.AWS_REGION }}
