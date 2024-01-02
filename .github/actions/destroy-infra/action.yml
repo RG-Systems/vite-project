@@ -14,6 +14,9 @@ inputs:
   aws-region:
     description: 'The AWS region to deploy to'
     required: true
+  pr-number:
+    description: 'The PR number'
+    required: false
 
 runs:
   using: composite
@@ -93,9 +96,6 @@ runs:
       working-directory: ./cdk
       run: |
         touch .env
-        echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
-        sed -i '/VARIABLE_DOMAIN/d' .env
-        echo "VARIABLE_DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "ENV=${{ inputs.environment }}" >> .env
         echo "STACK=${{ steps.stack.outputs.value }}" >> .env

@@ -1,7 +1,5 @@
 name: Destroy preview environment
 
-concurrency: tmp
-
 on:
   pull_request:
     types: [unlabeled, closed]
@@ -12,6 +10,7 @@ jobs:
       (github.event.action == 'unlabeled' && github.event.label.name == 'preview') ||
       (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview'))
     name: Destroy the infrastructure
+    concurrency: cdk
     environment: tmp
     runs-on: ubuntu-latest
 
@@ -26,3 +25,4 @@ jobs:
           environment: tmp
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
+          pr-number: ${{ github.event.pull_request.number }}
