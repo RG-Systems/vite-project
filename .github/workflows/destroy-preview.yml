@@ -21,17 +21,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
           ENV_NAME=${{ github.event.pull_request.number }}-tmp
-          gh api --method PUT $ENV_API/$ENV_NAME
-          gh variable set AWS_ACCOUNT ${{ secrets.AWS_ACCOUNT }} --environment $ENV_NAME
-          gh variable set AWS_REGION ${{ secrets.AWS_REGION }} --environment $ENV_NAME
-          # set all the other variables here vars
-          echo ${{ vars }} | jq -r 'to_entries[] | .key + "=" + .value' | while read line; do
-            gh variable set $line --environment $ENV_NAME
-          done
-          # override the domain variable
-          gh variable set DOMAIN $ENV_NAME-${{ vars.DOMAIN }} --environment $ENV_NAME
           echo "value=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "RESULT >>>"
           echo $ENV_NAME
