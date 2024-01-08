@@ -59,3 +59,21 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           vars: ${{ toJson(vars) }}
           pr-number: ${{ github.event.pull_request.number }}
+
+  remove:
+    name: Remove the temporary environment
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.configure.outputs.env }}
+
+    needs:
+      - infra
+      - configure
+
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
+          ENV_NAME=${{ needs.configure.outputs.env }}
+          gh api --method DELETE $ENV_API/$ENV_NAME
