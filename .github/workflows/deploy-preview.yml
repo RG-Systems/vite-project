@@ -13,18 +13,18 @@ jobs:
     outputs:
       env: ${{ steps.result.outputs.value }}
 
-    name: Create the temporary environment
+    name: Configure the temporary env
     runs-on: ubuntu-latest
     environment: qa
+
     steps:
       - uses: actions/checkout@v4
       - id: result
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ENV_API=/repos/$GITHUB_REPOSITORY/environments
           ENV_NAME=${{ github.event.pull_request.number }}-tmp
-          gh api --method PUT $ENV_API/$ENV_NAME
+          gh api --method PUT /repos/${{ github.repository }}/environments/$ENV_NAME
           gh variable set AWS_ACCOUNT ${{ secrets.AWS_ACCOUNT }} --environment $ENV_NAME
           gh variable set AWS_REGION ${{ secrets.AWS_REGION }} --environment $ENV_NAME
           # set all the other variables here vars
@@ -35,7 +35,8 @@ jobs:
           gh variable set DOMAIN $ENV_NAME-${{ vars.DOMAIN }} --environment $ENV_NAME
           echo "value=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "RESULT >>>"
-          echo $ENV_NAME
+          echo "ENV_NAME=$ENV_NAME"
+          echo gh variable list --environment $ENV_NAME
 
   infra:
     name: Deploy the infrastructure

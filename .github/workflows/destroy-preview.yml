@@ -13,7 +13,7 @@ jobs:
     outputs:
       env: ${{ steps.result.outputs.value }}
 
-    name: Create the temporary environment
+    name: Configure the environment
     runs-on: ubuntu-latest
     environment: qa
     steps:
@@ -64,6 +64,4 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ENV_API=/repos/$GITHUB_REPOSITORY/environments
-          ENV_NAME=${{ needs.configure.outputs.env }}
-          gh api --method DELETE $ENV_API/$ENV_NAME
+          gh api --method DELETE /repos/${{ github.repository }}/environments/${{ needs.configure.outputs.env }}
