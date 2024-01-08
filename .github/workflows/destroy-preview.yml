@@ -1,19 +1,40 @@
 name: Destroy preview environment
 
-concurrency: tmp
-
 on:
   pull_request:
     types: [unlabeled, closed]
 
 jobs:
-  infra:
+  configure:
     if: |
       (github.event.action == 'unlabeled' && github.event.label.name == 'preview') ||
       (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview'))
-    name: Destroy the infrastructure
-    environment: tmp
+
+    outputs:
+      env: ${{ steps.result.outputs.value }}
+
+    name: Configure the environment
     runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - id: result
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ENV_NAME=${{ github.event.pull_request.number }}-tmp
+          echo "value=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "RESULT >>>"
+          echo $ENV_NAME
+
+  infra:
+    name: Destroy the infrastructure
+    concurrency: cdk
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.configure.outputs.env }}
+
+    needs:
+      - configure
 
     permissions:
       id-token: write
@@ -26,3 +47,25 @@ jobs:
           environment: tmp
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
+          vars: ${{ toJson(vars) }}
+          pr-number: ${{ github.event.pull_request.number }}
+
+  remove:
+    name: Remove the temporary environment
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ needs.configure.outputs.env }}
+
+    needs:
+      - infra
+      - configure
+
+    permissions:
+      deployments: write
+      id-token: write
+
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --method DELETE /repos/${{ github.repository }}/environments/${{ needs.configure.outputs.env }}
