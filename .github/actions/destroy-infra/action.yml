@@ -114,5 +114,8 @@ runs:
       run: |
         BUCKET=${{ steps.project.outputs.value }}-storage
         STACK=${{ steps.stack.outputs.value }}
-        yarn cdk destroy $STACK --require-approval never --outputs-file cdk-outputs.json
+        yarn cdk destroy $STACK --force --outputs-file cdk-outputs.json
         aws s3 rm s3://$BUCKET/${{ steps.origin-path.outputs.value }} --recursive
+        if [ -n "${{ inputs.pr-number }}" ]; then
+          aws s3 rm s3://$BUCKET/${{ inputs.pr-number }} --recursive
+        fi
