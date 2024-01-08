@@ -18,8 +18,6 @@ jobs:
     environment: qa
     steps:
       - id: result
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
           ENV_NAME=${{ github.event.pull_request.number }}-tmp
@@ -71,9 +69,7 @@ jobs:
       - configure
 
     steps:
-      - env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
+      - run: |
           ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
           ENV_NAME=${{ needs.configure.outputs.env }}
           gh api --method DELETE $ENV_API/$ENV_NAME

@@ -18,8 +18,6 @@ jobs:
     environment: qa
     steps:
       - id: result
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
           ENV_NAME=${{ github.event.pull_request.number }}-tmp
