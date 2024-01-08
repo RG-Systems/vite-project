@@ -25,4 +25,5 @@ jobs:
           environment: tmp
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
+          vars: ${{ toJson(vars) }}
           pr-number: ${{ github.event.pull_request.number }}
