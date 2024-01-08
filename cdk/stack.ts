@@ -57,13 +57,7 @@ export class Stack extends cdk.Stack {
       });
     }
 
-    bucket.addToResourcePolicy(new iam.PolicyStatement({
-      actions: ['s3:GetObject'],
-      resources: [bucket.arnForObjects('*')],
-      principals: [new iam.CanonicalUserPrincipal(
-        originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
-      )]
-    }));
+    bucket.grantRead(originAccessIdentity);
 
     return bucket;
   }
