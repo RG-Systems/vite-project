@@ -14,8 +14,14 @@ jobs:
       env: ${{ steps.result.outputs.value }}
 
     name: Configure the temporary env
+
     runs-on: ubuntu-latest
+
     environment: qa
+
+    permissions:
+      deployments: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4

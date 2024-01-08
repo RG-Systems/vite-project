@@ -60,6 +60,10 @@ jobs:
       - infra
       - configure
 
+    permissions:
+      deployments: write
+      id-token: write
+
     steps:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
