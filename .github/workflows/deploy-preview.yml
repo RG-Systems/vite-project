@@ -5,14 +5,45 @@ on:
     types: [labeled, opened, synchronize]
 
 jobs:
-  infra:
+  configure:
     if: |
       (github.event.action == 'labeled' && github.event.label.name == 'preview') ||
       (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'preview'))
+
+    outputs:
+      env: ${{ steps.result.outputs.value }}
+
+    name: Create the temporary environment
+    runs-on: ubuntu-latest
+    environment: qa
+    steps:
+      - id: result
+        run: |
+          ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
+          ENV_NAME=${{ github.event.pull_request.number }}-tmp
+          gh api --method PUT $ENV_API/$ENV_NAME
+          gh variable set AWS_ACCOUNT ${{ secrets.AWS_ACCOUNT }} --environment $ENV_NAME
+          gh variable set AWS_REGION ${{ secrets.AWS_REGION }} --environment $ENV_NAME
+          # set all the other variables here vars
+          echo ${{ vars }} | jq -r 'to_entries[] | .key + "=" + .value' | while read line; do
+            gh variable set $line --environment $ENV_NAME
+          done
+          # override the domain variable
+          gh variable set DOMAIN $ENV_NAME-${{ vars.DOMAIN }} --environment $ENV_NAME
+          echo "value=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "RESULT >>>"
+          echo $ENV_NAME
+
+  infra:
     name: Deploy the infrastructure
     concurrency: cdk
-    environment: tmp
+    environment:
+      name: ${{ needs.configure.outputs.env }}
+
     runs-on: ubuntu-latest
+
+    needs:
+      - configure
 
     outputs:
       folder: ${{ steps.deploy-infra.outputs.folder }}
@@ -46,12 +77,13 @@ jobs:
     name: Deploy the application
     concurrency: deploy
     environment:
-      name: tmp
+      name: ${{ needs.configure.outputs.env }}
       url: ${{ needs.infra.outputs.url }}
 
     runs-on: ubuntu-latest
 
     needs:
+      - configure
       - infra
       - build
 
