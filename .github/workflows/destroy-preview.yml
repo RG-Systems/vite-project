@@ -64,6 +64,6 @@ jobs:
       - env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
+          ENV_API=/repos/$GITHUB_REPOSITORY/environments
           ENV_NAME=${{ needs.configure.outputs.env }}
           gh api --method DELETE $ENV_API/$ENV_NAME

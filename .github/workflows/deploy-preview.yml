@@ -17,11 +17,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: qa
     steps:
+      - uses: actions/checkout@v4
       - id: result
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ENV_API=/repos/${{ github.repository_owner }}/${{ github.repository }}/environments
+          ENV_API=/repos/$GITHUB_REPOSITORY/environments
           ENV_NAME=${{ github.event.pull_request.number }}-tmp
           gh api --method PUT $ENV_API/$ENV_NAME
           gh variable set AWS_ACCOUNT ${{ secrets.AWS_ACCOUNT }} --environment $ENV_NAME
