@@ -29,11 +29,9 @@ export class Stack extends cdk.Stack {
     const origin = this.getOrigin(bucket, originAccessIdentity, path);
     const distribution = this.getDistribution(
       origin,
-      bucket,
       functionAssociation,
       certificate,
       domain,
-      path,
       priceClass,
     );
 
@@ -51,7 +49,7 @@ export class Stack extends cdk.Stack {
     if (!bucket?.bucketArn) {
       bucket = new s3.Bucket(this, 'Bucket', {
         bucketName,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
         accessControl: s3.BucketAccessControl.PRIVATE,
         removalPolicy: cdk.RemovalPolicy.RETAIN,
       });
@@ -59,7 +57,7 @@ export class Stack extends cdk.Stack {
 
     bucket.addToResourcePolicy(new iam.PolicyStatement({
       actions: ['s3:GetObject'],
-      resources: [bucket.bucketArn + '/*'],
+      resources: [bucket.arnForObjects('*')],
       principals: [new iam.CanonicalUserPrincipal(
         originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
       )]
@@ -121,11 +119,9 @@ export class Stack extends cdk.Stack {
 
   private getDistribution(
     origin: origins.S3Origin,
-    bucket: s3.Bucket,
     functionAssociation?: cloudfront.FunctionAssociation,
     certificate?: acm.ICertificate,
     domain?: string,
-    path?: string,
     priceClass?: cloudfront.PriceClass,
   ): cloudfront.Distribution {
     return new cloudfront.Distribution(this, 'Distribution', {
