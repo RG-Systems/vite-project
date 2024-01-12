@@ -3,7 +3,7 @@ name: Deploy PROD environment
 on:
   release:
     types:
-      - published
+      - released
 
 jobs:
   infra:
