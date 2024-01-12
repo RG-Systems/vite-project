@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: delete the github deployments and the corresponding environment
-        uses: strumwolf/delete-deployment-environment@v1.1.0
+        uses: strumwolf/delete-deployment-environment@v2.3.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           environment: ${{ github.event.pull_request.number }}-tmp
