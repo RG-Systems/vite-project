@@ -47,26 +47,25 @@ export class Stack extends cdk.Stack {
 
   private getBucket(projectName: string, originAccessIdentity: cloudfront.OriginAccessIdentity): s3.Bucket {
     const bucketName = `${projectName}-storage`;
-    try {
-      const bucket = new s3.Bucket(this, 'Bucket', {
-        bucketName,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
-        accessControl: s3.BucketAccessControl.PRIVATE,
-        removalPolicy: cdk.RemovalPolicy.RETAIN,
-      });
+    const existingBucket = s3.Bucket.fromBucketName(this, 'Bucket', bucketName);
+    if (existingBucket) return existingBucket as s3.Bucket;
 
-      bucket.addToResourcePolicy(new iam.PolicyStatement({
-        actions: ['s3:GetObject'],
-        resources: [bucket.arnForObjects('*')],
-        principals: [new iam.CanonicalUserPrincipal(
-          originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
-        )]
-      }));
+    const bucket = new s3.Bucket(this, 'Bucket', {
+      bucketName,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
+      accessControl: s3.BucketAccessControl.PRIVATE,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
 
-      return bucket;
-    } catch (_) {
-      return s3.Bucket.fromBucketName(this, 'Bucket', bucketName) as s3.Bucket;
-    }
+    bucket.addToResourcePolicy(new iam.PolicyStatement({
+      actions: ['s3:GetObject'],
+      resources: [bucket.arnForObjects('*')],
+      principals: [new iam.CanonicalUserPrincipal(
+        originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId
+      )]
+    }));
+
+    return bucket;
   }
 
   private getZone(domain?: string): route53.IHostedZone | undefined {
