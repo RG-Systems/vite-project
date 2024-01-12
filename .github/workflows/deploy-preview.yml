@@ -5,55 +5,16 @@ on:
     types: [labeled, opened, synchronize]
 
 jobs:
-  configure:
+  infra:
     if: |
       (github.event.action == 'labeled' && github.event.label.name == 'preview') ||
       (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'preview'))
 
-    outputs:
-      env: ${{ steps.result.outputs.value }}
-
-    name: Configure the temporary env
-
-    runs-on: ubuntu-latest
-
-    environment: qa
-
-    permissions:
-      deployments: write
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-      - id: result
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ENV_NAME=${{ github.event.pull_request.number }}-tmp
-          gh api --method PUT /repos/${{ github.repository }}/environments/$ENV_NAME
-          gh variable set AWS_ACCOUNT ${{ secrets.AWS_ACCOUNT }} --environment $ENV_NAME
-          gh variable set AWS_REGION ${{ secrets.AWS_REGION }} --environment $ENV_NAME
-          # set all the other variables here vars
-          echo ${{ vars }} | jq -r 'to_entries[] | .key + "=" + .value' | while read line; do
-            gh variable set $line --environment $ENV_NAME
-          done
-          # override the domain variable
-          gh variable set DOMAIN $ENV_NAME-${{ vars.DOMAIN }} --environment $ENV_NAME
-          echo "value=$ENV_NAME" >> $GITHUB_OUTPUT
-          echo "RESULT >>>"
-          echo "ENV_NAME=$ENV_NAME"
-          echo gh variable list --environment $ENV_NAME
-
-  infra:
     name: Deploy the infrastructure
     concurrency: cdk
-    environment:
-      name: ${{ needs.configure.outputs.env }}
+    environment: qa
 
     runs-on: ubuntu-latest
-
-    needs:
-      - configure
 
     outputs:
       folder: ${{ steps.deploy-infra.outputs.folder }}
@@ -86,14 +47,11 @@ jobs:
   deploy:
     name: Deploy the application
     concurrency: deploy
-    environment:
-      name: ${{ needs.configure.outputs.env }}
-      url: ${{ needs.infra.outputs.url }}
+    environment: qa
 
     runs-on: ubuntu-latest
 
     needs:
-      - configure
       - infra
       - build
 
@@ -103,6 +61,14 @@ jobs:
       contents: read
 
     steps:
+      - name: create a github deployment
+        uses: bobheadxi/deployments@v1.4.0
+        id: deployment
+        with:
+          step: start
+          token: ${{ secrets.GITHUB_TOKEN }}
+          env: ${{ github.event.pull_request.number }}-tmp
+          ref: ${{ github.head_ref }}
       - uses: actions/checkout@v4
       - uses: ./.github/actions/deploy-app
         with:
@@ -112,3 +78,13 @@ jobs:
           bucket: ${{ needs.infra.outputs.bucket }}
           id: ${{ needs.infra.outputs.id }}
           pr-number: ${{ github.event.pull_request.number }}
+      - name: update the github deployment status
+        uses: bobheadxi/deployments@v1.4.0
+        if: always()
+        with:
+          step: finish
+          env: ${{ steps.deployment.outputs.env }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+          deployment_id: ${{ steps.deployment.outputs.deployment_id }}
+          env_url: ${{ needs.infra.outputs.url }}

@@ -5,36 +5,15 @@ on:
     types: [unlabeled, closed]
 
 jobs:
-  configure:
+  infra:
     if: |
       (github.event.action == 'unlabeled' && github.event.label.name == 'preview') ||
       (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview'))
 
-    outputs:
-      env: ${{ steps.result.outputs.value }}
-
-    name: Configure the environment
-    runs-on: ubuntu-latest
-    environment: qa
-    steps:
-      - id: result
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          ENV_NAME=${{ github.event.pull_request.number }}-tmp
-          echo "value=$ENV_NAME" >> $GITHUB_OUTPUT
-          echo "RESULT >>>"
-          echo $ENV_NAME
-
-  infra:
     name: Destroy the infrastructure
     concurrency: cdk
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ needs.configure.outputs.env }}
-
-    needs:
-      - configure
+    environment: qa
 
     permissions:
       id-token: write
@@ -53,19 +32,18 @@ jobs:
   remove:
     name: Remove the temporary environment
     runs-on: ubuntu-latest
-    environment:
-      name: ${{ needs.configure.outputs.env }}
+    environment: qa
 
     needs:
       - infra
-      - configure
 
     permissions:
       deployments: write
       id-token: write
 
     steps:
-      - env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api --method DELETE /repos/${{ github.repository }}/environments/${{ needs.configure.outputs.env }}
+      - name: delete the github deployments and the corresponding environment
+        uses: strumwolf/delete-deployment-environment@v1.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: ${{ github.event.pull_request.number }}-tmp
