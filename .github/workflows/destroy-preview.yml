@@ -1,7 +1,5 @@
 name: Destroy preview environment
 
-concurrency: tmp
-
 on:
   pull_request:
     types: [unlabeled, closed]
@@ -11,9 +9,11 @@ jobs:
     if: |
       (github.event.action == 'unlabeled' && github.event.label.name == 'preview') ||
       (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview'))
+
     name: Destroy the infrastructure
-    environment: tmp
+    concurrency: cdk
     runs-on: ubuntu-latest
+    environment: qa
 
     permissions:
       id-token: write
@@ -26,3 +26,24 @@ jobs:
           environment: tmp
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
+          vars: ${{ toJson(vars) }}
+          pr-number: ${{ github.event.pull_request.number }}
+
+  remove:
+    name: Remove the temporary environment
+    runs-on: ubuntu-latest
+    environment: qa
+
+    needs:
+      - infra
+
+    permissions:
+      deployments: write
+      id-token: write
+
+    steps:
+      - name: delete the github deployments and the corresponding environment
+        uses: strumwolf/delete-deployment-environment@v1.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          environment: ${{ github.event.pull_request.number }}-tmp

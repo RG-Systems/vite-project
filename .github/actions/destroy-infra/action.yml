@@ -14,6 +14,12 @@ inputs:
   aws-region:
     description: 'The AWS region to deploy to'
     required: true
+  vars:
+    description: 'The variables to pass to the CDK'
+    required: true
+  pr-number:
+    description: 'The PR number'
+    required: false
 
 runs:
   using: composite
@@ -93,9 +99,6 @@ runs:
       working-directory: ./cdk
       run: |
         touch .env
-        echo '${{ inputs.vars }}' | jq -r 'to_entries | .[] | "VARIABLE_\(.key)=\(.value)"' >> .env
-        sed -i '/VARIABLE_DOMAIN/d' .env
-        echo "VARIABLE_DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "DOMAIN=${{ steps.domain.outputs.value }}" >> .env
         echo "ENV=${{ inputs.environment }}" >> .env
         echo "STACK=${{ steps.stack.outputs.value }}" >> .env
@@ -111,5 +114,8 @@ runs:
       run: |
         BUCKET=${{ steps.project.outputs.value }}-storage
         STACK=${{ steps.stack.outputs.value }}
-        yarn cdk destroy $STACK --require-approval never --outputs-file cdk-outputs.json
+        yarn cdk destroy $STACK --force --outputs-file cdk-outputs.json
         aws s3 rm s3://$BUCKET/${{ steps.origin-path.outputs.value }} --recursive
+        if [ -n "${{ inputs.pr-number }}" ]; then
+          aws s3 rm s3://$BUCKET/${{ inputs.pr-number }} --recursive
+        fi
