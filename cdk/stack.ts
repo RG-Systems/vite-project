@@ -40,20 +40,21 @@ export class Stack extends cdk.Stack {
   }
 
   private getOriginAccessIdentity(): cloudfront.OriginAccessIdentity {
+    const oai = cloudfront.OriginAccessIdentity.fromOriginAccessIdentityId(this, 'OriginAccessIdentity', 'E18FI623QZZ3OJ');
+    if (oai) return oai as cloudfront.OriginAccessIdentity;
     return new cloudfront.OriginAccessIdentity(this, 'OriginAccessIdentity');
   }
 
   private getBucket(projectName: string, originAccessIdentity: cloudfront.OriginAccessIdentity): s3.Bucket {
     const bucketName = `${projectName}-storage`;
-    let bucket = s3.Bucket.fromBucketName(this, 'Bucket', bucketName) as s3.Bucket;
-    if (!bucket?.bucketArn) {
-      bucket = new s3.Bucket(this, 'Bucket', {
-        bucketName,
-        blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
-        accessControl: s3.BucketAccessControl.PRIVATE,
-        removalPolicy: cdk.RemovalPolicy.RETAIN,
-      });
-    }
+    const existingBucket = s3.Bucket.fromBucketName(this, 'Bucket', bucketName);
+    if (!!existingBucket?.bucketArn) return existingBucket as s3.Bucket;
+    const bucket = new s3.Bucket(this, 'Bucket', {
+      bucketName,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ACLS,
+      accessControl: s3.BucketAccessControl.PRIVATE,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
 
     bucket.addToResourcePolicy(new iam.PolicyStatement({
       actions: ['s3:GetObject'],
