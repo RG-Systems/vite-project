@@ -21,13 +21,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/destroy-infra
+      - uses: RG-Systems/infra-action@main
         with:
           environment: tmp
+          action: destroy
+          variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-          vars: ${{ toJson(vars) }}
-          pr-number: ${{ github.event.pull_request.number }}
 
   remove:
     name: Remove the temporary environment

@@ -23,14 +23,14 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
       - id: deploy-infra
-        uses: ./.github/actions/deploy-infra
+        uses: RG-Systems/infra-action@main
         with:
           environment: qa
+          action: deploy
+          variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-          vars: ${{ toJson(vars) }}
 
   build:
     name: Build the application

@@ -29,13 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: deploy-infra
-        uses: ./.github/actions/deploy-infra
+        uses: RG-Systems/infra-action@main
         with:
           environment: tmp
+          action: deploy
+          variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-          vars: ${{ toJson(vars) }}
-          pr-number: ${{ github.event.pull_request.number }}
 
   build:
     name: Build the application
