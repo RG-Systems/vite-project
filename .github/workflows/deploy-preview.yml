@@ -31,7 +31,7 @@ jobs:
       - id: deploy-infra
         uses: RG-Systems/infra-action@main
         with:
-          environment: tmp
+          name: vite-project
           action: deploy
           variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}

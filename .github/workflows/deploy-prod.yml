@@ -27,6 +27,7 @@ jobs:
       - id: deploy-infra
         uses: RG-Systems/infra-action@main
         with:
+          name: vite-project
           environment: prod
           action: deploy
           variables: ${{ toJson(vars) }}
