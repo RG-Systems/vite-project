@@ -25,13 +25,16 @@ jobs:
           variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
+      - run: |
+          echo ">>> create-infra-template -> Check if in next step the file is available"
+          ls -la
+          echo "<<< create-infra-template -> Check if in next step the file is available"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
           role-session-name: vp-cdk-deploy
           aws-region: ${{ secrets.AWS_REGION }}
-      - id: deploy-infra
-        uses: aws-actions/aws-cloudformation-github-deploy@v1
-        with:
-          name: vite-project
-          template: ${{ steps.create-infra-template.outputs.stack }}
+      - run: |
+          echo ">>> aws -> Check if in next step the file is available"
+          ls -la
+          echo "<<< aws -> Check if in next step the file is available"
