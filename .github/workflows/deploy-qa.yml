@@ -12,58 +12,26 @@ jobs:
     environment: qa
     runs-on: ubuntu-latest
 
-    outputs:
-      folder: ${{ steps.deploy-infra.outputs.folder }}
-      bucket: ${{ steps.deploy-infra.outputs.bucket }}
-      id: ${{ steps.deploy-infra.outputs.id }}
-      url: ${{ steps.deploy-infra.outputs.url }}
-
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - id: deploy-infra
+      - id: create-infra-template
         uses: RG-Systems/infra-action@main
         with:
           name: vite-project
           environment: qa
-          action: deploy
           variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-
-  build:
-    name: Build the application
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/build-app
-
-  deploy:
-    name: Deploy the application
-    concurrency: deploy
-    environment:
-      name: qa
-      url: ${{ needs.infra.outputs.url }}
-
-    runs-on: ubuntu-latest
-
-    needs:
-      - infra
-      - build
-
-    permissions:
-      deployments: write
-      id-token: write
-      contents: read
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/deploy-app
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-account: ${{ secrets.AWS_ACCOUNT }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT }}:role/RG-Systems-GH-Actions
+          role-session-name: vp-cdk-deploy
           aws-region: ${{ secrets.AWS_REGION }}
-          folder: ${{ needs.infra.outputs.folder }}
-          bucket: ${{ needs.infra.outputs.bucket }}
-          id: ${{ needs.infra.outputs.id }}
+      - id: deploy-infra
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: vite-project
+          template: ${{ steps.create-infra-template.outputs.stack }}
