@@ -20,10 +20,12 @@ jobs:
       - id: create-infra-template
         uses: RG-Systems/infra-action@main
         with:
-          action: 'deploy'
+          action: deploy
           name: vite-project
           environment: qa
           optimized: false
+          zone: Z03919341BL4WYM2KHJ2Q
+          identity: E18FI623QZZ3OJ
           variables: ${{ toJson(vars) }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
