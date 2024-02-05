@@ -24,11 +24,11 @@ jobs:
           name: vite-project
           environment: qa
           optimized: false
-          zone: Z03919341BL4WYM2KHJ2Q
-          identity: E18FI623QZZ3OJ
-          variables: ${{ toJson(vars) }}
+          domain: ${{ vars.STACK_DOMAIN }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
+          aws-zone-id: Z03919341BL4WYM2KHJ2Q
+          aws-origin-access-identity: E18FI623QZZ3OJ
       - run: |
           echo ">>> create-infra-template -> Check if in next step the file is available"
           ls -la
