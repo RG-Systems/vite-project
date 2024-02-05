@@ -25,7 +25,7 @@ jobs:
           environment: qa
           optimized: false
           domain: ${{ vars.STACK_DOMAIN }}
-          variables: ${{ toJson(vars) }}
+          variables: ${{ vars }}
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
           aws-zone-id: Z03919341BL4WYM2KHJ2Q
