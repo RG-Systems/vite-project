@@ -12,12 +12,18 @@ jobs:
     environment: qa
     runs-on: ubuntu-latest
 
+    outputs:
+      url: ${{ steps.infra.outputs.url }}
+      folder: ${{ steps.infra.outputs.folder }}
+      bucket: ${{ steps.infra.outputs.bucket }}
+      id: ${{ steps.infra.outputs.id }}
+
     permissions:
       id-token: write
       contents: read
 
     steps:
-      - id: create-infra-template
+      - id: infra
         uses: RG-Systems/infra-action@main
         with:
           action: deploy
@@ -28,9 +34,55 @@ jobs:
           variables: "${{ toJson(vars) }}"
           aws-account: ${{ secrets.AWS_ACCOUNT }}
           aws-region: ${{ secrets.AWS_REGION }}
-          aws-zone-id: Z03919341BL4WYM2KHJ2Q
-          aws-origin-access-identity: E18FI623QZZ3OJ
-      - run: |
-          echo ">>> create-infra-template -> Check if in next step the file is available"
-          ls -la
-          echo "<<< create-infra-template -> Check if in next step the file is available"
+          aws-zone-id: ${{ secrets.AWS_ZONE_ID }}
+          aws-origin-access-identity: ${{ secrets.AWS_ORIGIN_ACCESS_IDENTITY }}
+          aws-role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-role-session-name: ${{ secrets.AWS_ROLE_SESSION_NAME }}
+
+  build:
+    name: Build the application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'yarn'
+      - name: Install and build app
+        shell: bash
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: application
+          path: ./dist
+
+  deploy:
+    name: Deploy the application
+    concurrency: deploy
+    environment:
+      name: qa
+      url: ${{ needs.infra.outputs.url }}
+
+    runs-on: ubuntu-latest
+
+    needs:
+      - infra
+      - build
+
+    permissions:
+      deployments: write
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/deploy-app
+        with:
+          aws-account: ${{ secrets.AWS_ACCOUNT }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          folder: ${{ needs.infra.outputs.folder }}
+          bucket: ${{ needs.infra.outputs.bucket }}
+          id: ${{ needs.infra.outputs.id }}
