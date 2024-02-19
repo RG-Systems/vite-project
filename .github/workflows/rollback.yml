@@ -3,9 +3,7 @@ name: Rollback
 on:
   release:
     types:
-      - edited
-      - prereleased
-      - released
+      - created
 
 jobs:
   main:
@@ -25,5 +23,3 @@ jobs:
           echo "EVENT: ${{ github.event_name }}"
           echo "ACTION: ${{ github.event.action }}"
           echo "IS PRERELEASE: ${{ github.event.release.prerelease }}"
-          echo "CHANGES: ${{ github.event.changes.body }}"
-          echo "RELEASE: ${{ github.event.release.body }}"
