@@ -3,13 +3,9 @@ name: Rollback
 on:
   release:
     types:
-      - created
-      - deleted
       - edited
       - prereleased
-      - published
       - released
-      - unpublished
 
 jobs:
   main:
@@ -25,5 +21,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - run: |
-          echo "${{ github.event.action }}"
-          echo "${{ github.event.release.body }}"
+          echo "GITHUB: ${{ github }}"
+          echo "EVENT: ${{ github.event_name }}"
+          echo "ACTION: ${{ github.event.action }}"
+          echo "CHANGES: ${{ github.event.changes.body }}"
+          echo "RELEASE: ${{ github.event.release.body }}"
