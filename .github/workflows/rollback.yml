@@ -3,7 +3,7 @@ name: Rollback
 on:
   release:
     types:
-      - published
+      - edited
 
 jobs:
   main:
