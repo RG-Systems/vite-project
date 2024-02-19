@@ -1,11 +1,19 @@
 name: Rollback
 
 on:
-  release
+  release:
+    types:
+      - created
+      - deleted
+      - edited
+      - prereleased
+      - published
+      - released
+      - unpublished
 
 jobs:
-  build:
-    name: Build
+  main:
+    name: DEBUG
 
     runs-on: ubuntu-latest
 
