@@ -1,10 +1,7 @@
 name: Rollback
 
 on:
-  release:
-    types:
-      - unpublished
-      - deleted
+  release
 
 jobs:
   build:
@@ -16,16 +13,9 @@ jobs:
       contents: read
       deployments: write
 
-    env:
-      ENV: ${{ github.event.action == 'deleted' && 'uat' || 'prod' }}
-
-    outputs:
-      environment: ${{ env.ENV }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
       - run: |
-          echo "Deploying to ${{ env.ENV }} environment"
           echo "${{ github.event.action }}"
           echo "${{ github.event.release.body }}"
