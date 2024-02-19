@@ -21,8 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - run: |
-          echo "GITHUB: ${{ github }}"
+          echo "GITHUB: ${{ toJson(github) }}"
           echo "EVENT: ${{ github.event_name }}"
           echo "ACTION: ${{ github.event.action }}"
+          echo "IS PRERELEASE: ${{ github.event.release.prerelease }}"
           echo "CHANGES: ${{ github.event.changes.body }}"
           echo "RELEASE: ${{ github.event.release.body }}"
