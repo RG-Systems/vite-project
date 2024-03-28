@@ -14,8 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          git fetch --all
-          BRANCHES=$(git branch --sort=-committerdate --format="%(refname:short)")
+          BRANCHES=$(git branch --sort=-committerdate --remotes)
           echo ">>> BRANCHES: $BRANCHES"
           TARGET_BRANCH=$(echo $BRANCHES | grep "rc/" | head -n 1)
           echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
@@ -27,14 +26,14 @@ jobs:
               TARGET_BRANCH=$LABEL
             fi
           done
-          # echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
-          # VERSION=$(echo $TARGET_BRANCH | cut -d '/' -f 2)
-          # echo ">>> VERSION: $VERSION"
-          # git checkout $TARGET_BRANCH
-          # git checkout -b "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
-          # git cherry-pick ${{ github.event.pull_request.head.sha }}
-          # git push origin "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
-          # gh pr create --base $TARGET_BRANCH \
-          #   --head "cp-$VERSION-${{ github.event.pull_request.head.sha }}" \
-          #   --title "cherry-pick: ${{ github.event.pull_request.title }}" \
-          #   --body "This PR was cherry-picked from #$PR_NUMBER"
+          echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
+          VERSION=$(echo $TARGET_BRANCH | cut -d '/' -f 2)
+          echo ">>> VERSION: $VERSION"
+          git checkout $TARGET_BRANCH
+          git checkout -b "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
+          git cherry-pick ${{ github.event.pull_request.head.sha }}
+          git push origin "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
+          gh pr create --base $TARGET_BRANCH \
+            --head "cp-$VERSION-${{ github.event.pull_request.head.sha }}" \
+            --title "cherry-pick: ${{ github.event.pull_request.title }}" \
+            --body "This PR was cherry-picked from #$PR_NUMBER"
