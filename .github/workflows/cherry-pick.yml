@@ -14,8 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          LABELS=${{ github.event.pull_request.labels.*.name }}
           TARGET_BRANCH=$(git branch --sort=-committerdate | grep 'rc/' | head -n 1)
+          LABELS=$(echo "${{ toJson(github.event.pull_request.labels.*.name) }}" | jq -r 'join(" ")')
           for label in $LABELS; do
             if [[ $label == rc/* ]]; then
               TARGET_BRANCH=$label
