@@ -1,0 +1,32 @@
+name: Cherry-pick
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  main:
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'cherry-pick')
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          LABELS=${{ github.event.pull_request.labels.*.name }}
+          TARGET_BRANCH=$(git branch --sort=-committerdate | grep 'rc/' | head -n 1)
+          for label in $LABELS; do
+            if [[ $label == rc/* ]]; then
+              TARGET_BRANCH=$label
+            fi
+          done
+          VERSION=$(echo $TARGET_BRANCH | cut -d '/' -f 2)
+          git checkout $TARGET_BRANCH
+          git checkout -b "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
+          git cherry-pick ${{ github.event.pull_request.head.sha }}
+          git push origin "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
+          gh pr create --base $TARGET_BRANCH \
+            --head "cp-$VERSION-${{ github.event.pull_request.head.sha }}" \
+            --title "cherry-pick: ${{ github.event.pull_request.title }}" \
+            --body "This PR was cherry-picked from #$PR_NUMBER"
