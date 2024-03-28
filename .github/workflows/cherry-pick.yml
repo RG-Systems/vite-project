@@ -20,20 +20,20 @@ jobs:
           echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
           LABELS=${{ github.event.pull_request.labels.*.name }}
           echo ">>> LABELS: $LABELS"
-          for label in $LABELS; do
-            echo ">>> LABEL: $label"
-            if [[ $label == rc/* ]]; then
-              TARGET_BRANCH=$label
+          for LABEL in $LABELS; do
+            echo ">>> LABEL: $LABEL"
+            if [[ $LABEL == rc/* ]]; then
+              TARGET_BRANCH=$LABEL
             fi
           done
-          echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
-          VERSION=$(echo $TARGET_BRANCH | cut -d '/' -f 2)
-          echo ">>> VERSION: $VERSION"
-          git checkout $TARGET_BRANCH
-          git checkout -b "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
-          git cherry-pick ${{ github.event.pull_request.head.sha }}
-          git push origin "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
-          gh pr create --base $TARGET_BRANCH \
-            --head "cp-$VERSION-${{ github.event.pull_request.head.sha }}" \
-            --title "cherry-pick: ${{ github.event.pull_request.title }}" \
-            --body "This PR was cherry-picked from #$PR_NUMBER"
+          # echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
+          # VERSION=$(echo $TARGET_BRANCH | cut -d '/' -f 2)
+          # echo ">>> VERSION: $VERSION"
+          # git checkout $TARGET_BRANCH
+          # git checkout -b "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
+          # git cherry-pick ${{ github.event.pull_request.head.sha }}
+          # git push origin "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
+          # gh pr create --base $TARGET_BRANCH \
+          #   --head "cp-$VERSION-${{ github.event.pull_request.head.sha }}" \
+          #   --title "cherry-pick: ${{ github.event.pull_request.title }}" \
+          #   --body "This PR was cherry-picked from #$PR_NUMBER"
