@@ -15,13 +15,17 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           TARGET_BRANCH=$(git branch --sort=-committerdate | grep 'rc/' | head -n 1)
-          LABELS=$(echo "${{ toJson(github.event.pull_request.labels.*.name) }}" | jq -r 'join(" ")')
+          echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
+          LABELS=${{ github.event.pull_request.labels.*.name }}
+          echo ">>> LABELS: $LABELS"
           for label in $LABELS; do
             if [[ $label == rc/* ]]; then
               TARGET_BRANCH=$label
             fi
           done
+          echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
           VERSION=$(echo $TARGET_BRANCH | cut -d '/' -f 2)
+          echo ">>> VERSION: $VERSION"
           git checkout $TARGET_BRANCH
           git checkout -b "cp-$VERSION-${{ github.event.pull_request.head.sha }}"
           git cherry-pick ${{ github.event.pull_request.head.sha }}
