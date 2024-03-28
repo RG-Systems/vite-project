@@ -21,6 +21,7 @@ jobs:
           LABELS=${{ github.event.pull_request.labels.*.name }}
           echo ">>> LABELS: $LABELS"
           for label in $LABELS; do
+            echo ">>> LABEL: $label"
             if [[ $label == rc/* ]]; then
               TARGET_BRANCH=$label
             fi
