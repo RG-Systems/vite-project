@@ -14,7 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          TARGET_BRANCH=$(git branch --sort=-committerdate | grep 'rc/' | head -n 1)
+          BRANCHES=$(git branch --sort=-committerdate | grep 'rc/')
+          echo ">>> BRANCHES: $BRANCHES"
+          TARGET_BRANCH=$(echo $BRANCHES | head -n 1)
           echo ">>> TARGET_BRANCH: $TARGET_BRANCH"
           LABELS=${{ github.event.pull_request.labels.*.name }}
           echo ">>> LABELS: $LABELS"
