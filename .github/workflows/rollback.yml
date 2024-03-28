@@ -1,9 +1,12 @@
-name: Rollback
+name: Test
 
 on:
-  release:
-    types:
-      - edited
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment'
+        required: true
+        type: environment
 
 jobs:
   main:
@@ -19,7 +22,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - run: |
+          echp "ENV: ${{ inputs.environment }}"
           echo "GITHUB: ${{ toJson(github) }}"
           echo "EVENT: ${{ github.event_name }}"
-          echo "ACTION: ${{ github.event.action }}"
-          echo "IS PRERELEASE: ${{ github.event.release.prerelease }}"
